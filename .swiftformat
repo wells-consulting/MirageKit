@@ -1,0 +1,36 @@
+### Built-in Rules
+
+--header "\nCopyright 2025 Wells Consulting.\nThis file is part of MirageKit and is released under the MIT License.\n"
+
+--exclude Tests
+
+### Built-in Rules
+
+--ifdef indent
+--self init-only
+--type-blank-lines preserve
+--wrap-arguments disabled
+--wrap-parameters disabled
+--xcode-indentation enabled
+
+### Opt-in Rules
+
+--enable blankLinesBetweenImports
+--enable blockComments
+--enable environmentEntry
+--enable isEmpty
+--enable preferFinalClasses
+--enable preferKeyPath
+--enable privateStateVariables
+--enable redundantEquatable
+--enable redundantMemberwiseInit
+--enable urlMacro
+
+### Disabled rules
+
+--disable blankLinesAtEndOfScope
+--disable blankLinesAtStartOfScope
+--disable modifiersOnSameLine
+--disable preferKeyPath
+# --disable trailingCommas
+--disable unusedArguments
