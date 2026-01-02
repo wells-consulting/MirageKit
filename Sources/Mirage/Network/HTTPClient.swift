@@ -136,14 +136,10 @@ public actor HTTPClient {
 
     public func setHeader(name: String, value: String?) {
         if let value {
-            insertHeader(name: name, value: value)
+            additionalHeaders.updateValue(value, forKey: name)
         } else {
             removeHeader(name)
         }
-    }
-
-    public func insertHeader(name: String, value: String) {
-        setHeader(name: name, value: value)
     }
 
     public func removeHeader(_ name: String) {
