@@ -20,6 +20,7 @@ import Foundation
 #if canImport(os)
 
     import os
+    import Synchronization
 
     public struct Timber: Sendable {
 
@@ -406,6 +407,7 @@ public extension Timber {
         private var buffer: [TimberLogEntry] = []
         private let fileURL: URL
         private let jayson: Jayson
+        private let generation = Mutex<Int>(0)
 
         // MARK: - Initializers
 
@@ -472,6 +474,12 @@ public extension Timber {
 
         // MARK: - Public API
 
+        /// The current generation counter. Incremented by ``deleteAll()``.
+        /// Used by the sink to discard entries created before a clear.
+        nonisolated public var currentGeneration: Int {
+            generation.withLock { $0 }
+        }
+
         /// All persisted entries, most recent first.
         public var entries: [TimberLogEntry] {
             buffer.reversed()
@@ -484,6 +492,40 @@ public extension Timber {
 
         /// Add a new entry to be persisted.
         public func append(
+            level: Timber.Level,
+            message: String,
+            file: StaticString,
+            line: UInt,
+        ) {
+            appendEntry(level: level, message: message, file: file, line: line)
+        }
+
+        /// Add a new entry only if the store's generation still matches.
+        ///
+        /// When ``deleteAll()`` is called, the generation is incremented.
+        /// Any in-flight `Task` that captured an earlier generation will
+        /// silently drop its entry instead of re-adding it after a clear.
+        public func append(
+            generation: Int,
+            level: Timber.Level,
+            message: String,
+            file: StaticString,
+            line: UInt,
+        ) {
+            guard generation == self.generation.withLock({ $0 }) else { return }
+            appendEntry(level: level, message: message, file: file, line: line)
+        }
+
+        /// Delete all persisted entries and remove the backing file.
+        public func deleteAll() {
+            generation.withLock { $0 += 1 }
+            buffer.removeAll()
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        // MARK: - Private Helpers
+
+        private func appendEntry(
             level: Timber.Level,
             message: String,
             file: StaticString,
@@ -507,12 +549,6 @@ public extension Timber {
             } else {
                 appendToFile(entry)
             }
-        }
-
-        /// Delete all persisted entries and remove the backing file.
-        public func deleteAll() {
-            buffer.removeAll()
-            try? FileManager.default.removeItem(at: fileURL)
         }
 
         // MARK: - File I/O
@@ -571,8 +607,10 @@ public extension Timber {
         ) {
             Timber.sink = { level, message, file, line in
                 guard level >= minimumLevel else { return }
+                let gen = store.currentGeneration
                 Task {
                     await store.append(
+                        generation: gen,
                         level: level,
                         message: message,
                         file: file,

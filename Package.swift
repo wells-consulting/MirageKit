@@ -5,10 +5,10 @@ import PackageDescription
 let package = Package(
     name: "MirageKit",
     platforms: [
-        .iOS(.v16),
+        .iOS(.v18),
         .watchOS(.v9),
         .tvOS(.v18),
-        .macOS(.v13),
+        .macOS(.v15),
     ],
     products: [
         .library(name: "MirageCore", targets: ["MirageCore"]),

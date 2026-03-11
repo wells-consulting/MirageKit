@@ -581,6 +581,52 @@ struct TimberLogStoreTests {
         #expect(!FileManager.default.fileExists(atPath: fileURL.path))
     }
 
+    @Test("deleteAll increments generation")
+    func deleteAllIncrementsGeneration() async throws {
+        let dir = try makeTempDir()
+        defer { cleanUp(dir) }
+
+        let store = TimberLogStore(directory: dir)
+        let gen0 = await store.currentGeneration
+        #expect(gen0 == 0)
+
+        await store.deleteAll()
+        let gen1 = await store.currentGeneration
+        #expect(gen1 == 1)
+
+        await store.deleteAll()
+        let gen2 = await store.currentGeneration
+        #expect(gen2 == 2)
+    }
+
+    @Test("append with matching generation succeeds")
+    func appendWithMatchingGeneration() async throws {
+        let dir = try makeTempDir()
+        defer { cleanUp(dir) }
+
+        let store = TimberLogStore(directory: dir)
+        let gen = await store.currentGeneration
+        await store.append(generation: gen, level: .error, message: "kept", file: #fileID, line: #line)
+
+        let count = await store.entryCount
+        #expect(count == 1)
+    }
+
+    @Test("append with stale generation is silently dropped")
+    func appendWithStaleGeneration() async throws {
+        let dir = try makeTempDir()
+        defer { cleanUp(dir) }
+
+        let store = TimberLogStore(directory: dir)
+        let staleGen = await store.currentGeneration
+        await store.deleteAll() // increments generation
+
+        await store.append(generation: staleGen, level: .error, message: "stale", file: #fileID, line: #line)
+
+        let count = await store.entryCount
+        #expect(count == 0)
+    }
+
     @Test("Entries are capped at maxEntries")
     func maxEntriesCap() async throws {
         let dir = try makeTempDir()
