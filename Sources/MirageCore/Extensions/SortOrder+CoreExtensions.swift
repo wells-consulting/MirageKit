@@ -7,6 +7,9 @@ import Foundation
 
 public extension SortOrder {
 
+    static var ascending: SortOrder { .forward }
+    static var descending: SortOrder { .reverse }
+
     mutating func toggle() {
         switch self {
         case .forward:

@@ -10,17 +10,17 @@
 
     public protocol FormField: View {
         var label: String { get }
-        var caption: Message? { get }
-        var footnote: Message? { get }
+        var caption: Notice? { get }
+        var footnote: Notice? { get }
         var isFocused: Bool { get }
         var borderStyle: FieldBorderStyle { get }
     }
 
     public extension FormField {
         var borderStyle: FieldBorderStyle {
-            if footnote?.severity == .error {
+            if footnote?.kind == .error {
                 .custom(.red)
-            } else if footnote?.severity == .warning {
+            } else if footnote?.kind == .warning {
                 .custom(.orange)
             } else if isFocused {
                 .focused

@@ -10,25 +10,25 @@ public extension Date {
 
     // MARK: - Utility string formatting
 
-    var iso8601String: String {
+    var iso8601: String {
         formatted(.iso8601)
     }
 
-    var shortDateString: String {
+    var shortDate: String {
         formatted(date: .numeric, time: .omitted)
     }
 
-    var shortDateTimeString: String {
+    var shortDateTime: String {
         formatted(date: .numeric, time: .shortened)
     }
 
-    var shortTimeString: String {
+    var shortTime: String {
         formatted(date: .omitted, time: .shortened)
     }
 
     // MARK: - Duration Strings
 
-    static func debugDurationString(from startDate: Date, to endDate: Date) -> String {
+    static func durationString(from startDate: Date, to endDate: Date) -> String {
         let elapsedTime = TimeInterval(endDate.timeIntervalSince(startDate))
         if elapsedTime < 1.0 {
             return String(format: "%d ms", Int(ceil(elapsedTime * 1000.0)))
@@ -37,7 +37,7 @@ public extension Date {
         }
     }
 
-    static func debugDurationDescriptionString(from startDate: Date, to endDate: Date) -> String {
+    static func durationLabel(from startDate: Date, to endDate: Date) -> String {
         let calendar = Calendar.current
         let nowIsAfter = endDate > startDate
         let fromDate = nowIsAfter ? startDate : endDate
@@ -121,7 +121,7 @@ public extension Date {
         let calendar = Calendar.current
         var dateComponents = DateComponents()
         dateComponents.setValue(numDays, for: .day)
-        return calendar.date(byAdding: dateComponents, to: Date())
+        return calendar.date(byAdding: dateComponents, to: self)
     }
 
     static func numberOfDaysBetween(_ date1: Date, _ date2: Date) -> Int? {

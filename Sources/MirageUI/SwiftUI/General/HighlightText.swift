@@ -37,7 +37,7 @@
         // MARK: - Body
 
         public var body: some View {
-            if text.isAllWhitespace {
+            if text.isBlank {
                 Text(text)
             } else {
                 Text(attributedString)

@@ -17,8 +17,8 @@
         // MARK: - Properties
 
         public let label: String
-        public let caption: Message?
-        public let footnote: Message?
+        public let caption: Notice?
+        public let footnote: Notice?
         private let elements: [T]
 
         // MARK: - State / Bindings
@@ -31,8 +31,8 @@
             elements: [T],
             label: String,
             selection: Binding<T?>,
-            caption: Message? = nil,
-            footnote: Message? = nil,
+            caption: Notice? = nil,
+            footnote: Notice? = nil,
         ) {
             self.elements = elements
             self.label = label
@@ -49,7 +49,7 @@
                     Text(label)
                         .font(.headline)
                     if let caption {
-                        MessageLabel(caption)
+                        NoticeLabel(caption)
                             .font(.caption)
                             .truncationMode(.middle)
                     }

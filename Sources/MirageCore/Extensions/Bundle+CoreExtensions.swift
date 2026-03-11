@@ -9,27 +9,24 @@ import Foundation
 public extension Bundle {
 
     /// App Name
-    static let appName: String? = Bundle.main
-        .infoDictionary?["CFBundleExecutable"] as? String
+    static let appName: String = (Bundle.main
+        .infoDictionary?["CFBundleExecutable"] as? String) ?? "Mirage"
 
     /// App Identifier, i.e., consulting.wells.Mirage
-    static let appBundleIdentifier: String? = Bundle.main.bundleIdentifier
+    static let appBundleIdentifier: String = Bundle.main
+        .bundleIdentifier ?? "consulting.wells.Mirage"
 
     /// App Short Version Number, i.e., 1.0
-    static let appShortVersionNumber: String? = Bundle.main
-        .infoDictionary?["CFBundleShortVersionString"] as? String
+    static let appShortVersionNumber: String = (Bundle.main
+        .infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.0"
 
     /// App Build Number
-    static let appBuildNumber: String? = Bundle.main
-        .infoDictionary?["CFBundleVersion"] as? String
+    static let appBuildNumber: String = (Bundle.main
+        .infoDictionary?["CFBundleVersion"] as? String) ?? "0"
 
     /// App Version Number Including Build, i.e., 1.0.5
-    static var appLongVersionNumber: String? {
-        if let appShortVersionNumber, let appBuildNumber {
-            "\(appShortVersionNumber) (Build \(appBuildNumber))"
-        } else {
-            nil
-        }
+    static var appLongVersionNumber: String {
+        "\(appShortVersionNumber) (Build \(appBuildNumber))"
     }
 
     /// Filename for the App's icon

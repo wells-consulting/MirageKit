@@ -17,8 +17,8 @@
         // MARK: - Properties
 
         public let label: String
-        public let caption: Message?
-        public let footnote: Message?
+        public let caption: Notice?
+        public let footnote: Notice?
         private let formatter: NumberFormatter
 
         // MARK: - State & Bindings
@@ -27,7 +27,7 @@
 
         // MARK: - Initializers
 
-        public init(_ value: Binding<Decimal>, label: String, caption: Message? = nil, format: Format, footnote: Message? = nil) {
+        public init(_ value: Binding<Decimal>, label: String, caption: Notice? = nil, format: Format, footnote: Notice? = nil) {
             _value = value
             self.label = label
             self.caption = caption
@@ -60,7 +60,7 @@
                         .font(.headline)
                     if let caption {
                         Spacer()
-                        MessageLabel(caption)
+                        NoticeLabel(caption)
                             .font(.caption)
                             .truncationMode(.middle)
                     }

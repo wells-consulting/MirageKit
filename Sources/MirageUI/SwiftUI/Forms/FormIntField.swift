@@ -17,8 +17,8 @@
         // MARK: - Properties
 
         public let label: String
-        public let caption: Message?
-        public let footnote: Message?
+        public let caption: Notice?
+        public let footnote: Notice?
 
         private let formatter: NumberFormatter = {
             let formatter = NumberFormatter()
@@ -33,7 +33,7 @@
 
         // MARK: - Initializers
 
-        public init(_ value: Binding<Int>, label: String, caption: Message? = nil, footnote: Message? = nil) {
+        public init(_ value: Binding<Int>, label: String, caption: Notice? = nil, footnote: Notice? = nil) {
             _value = value
             self.label = label
             self.caption = caption

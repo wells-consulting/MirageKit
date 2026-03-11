@@ -8,55 +8,63 @@
     import MirageCore
     import SwiftUI
 
-    public struct ErrorView: View {
+    /// A detailed error view with an icon, title, summary, optional details,
+    /// optional diagnostics, and one or more action buttons.
+    ///
+    /// Like `NoticeView`, `ErrorView` is generic over an `Action` type that
+    /// conforms to `RawRepresentable<String> & Hashable`. Each action case
+    /// becomes a button whose label is the raw value.
+    ///
+    /// Up to 3 actions are supported.
+    public struct ErrorView<Action: RawRepresentable & Hashable>: View where Action.RawValue == String {
 
         private let title: String
         private let summary: String
         private let details: String?
         private let diagnostics: String?
-        private let buttonText: String
-        private let onButtonTapped: () -> Void
+        private let actions: [Action]
+        private let onAction: (Action) -> Void
 
         public init(
             error: any Error,
             options: MirageErrorUtils.ErrorDescriptionOptions,
-            buttonText: String = "OK",
-            onButtonTapped: @escaping () -> Void,
+            actions: [Action],
+            onAction: @escaping (Action) -> Void,
         ) {
-            self.title = (error as? (any MirageError))?.alertTitle ?? "Error"
+            self.title = (error as? (any MirageError))?.title ?? "Error"
             self.summary = (error as? (any MirageError))?.summary ?? error.localizedDescription
             self.details = (error as? (any MirageError))?.details
             self.diagnostics = (error as? (any MirageError))?.diagnostics(options: options)
-            self.buttonText = buttonText
-            self.onButtonTapped = onButtonTapped
+            self.actions = Array(actions.prefix(3))
+            self.onAction = onAction
         }
 
         public init(
-            message: Message,
-            buttonText: String = "OK",
-            onButtonTapped: @escaping () -> Void,
+            notice: Notice,
+            actions: [Action],
+            onAction: @escaping (Action) -> Void,
         ) {
-            self.title = message.title ?? message.severity.title ?? "Error"
-            self.summary = message.summary
-            self.details = message.details
+            self.title = notice.title ?? notice.kind.title
+            self.summary = notice.summary
+            self.details = notice.details
             self.diagnostics = nil
-            self.buttonText = buttonText
-            self.onButtonTapped = onButtonTapped
+            self.actions = Array(actions.prefix(3))
+            self.onAction = onAction
         }
 
         public init(
             title: String,
             summary: String,
             details: String? = nil,
-            buttonText: String = "OK",
-            onButtonTapped: @escaping () -> Void,
+            actions: [Action],
+            onAction: @escaping (Action) -> Void,
         ) {
             self.title = title
             self.summary = summary
             self.details = details
             self.diagnostics = nil
-            self.buttonText = buttonText
-            self.onButtonTapped = onButtonTapped
+            self.actions = Array(actions.prefix(3))
+            self.onAction = onAction
         }
 
         public var body: some View {
@@ -65,7 +73,9 @@
                 descriptionView
                 diagnosticsView
                 Spacer()
-                buttonsView
+                if !actions.isEmpty {
+                    buttonsView
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()
@@ -122,13 +132,69 @@
 
         @ViewBuilder
         private var buttonsView: some View {
-            HStack {
-                Button(
-                    action: { onButtonTapped() },
-                    label: { Text(buttonText) },
-                )
-                .buttonStyle(.bordered)
+            HStack(spacing: 12) {
+                ForEach(actions, id: \.self) { action in
+                    Button(action.rawValue) {
+                        onAction(action)
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
+        }
+    }
+
+    // MARK: - Single-button convenience
+
+    /// A single-action type used when ErrorView needs just one button (e.g. "OK").
+    public enum ErrorDismissAction: String, Hashable {
+        case ok = "OK"
+    }
+
+    public extension ErrorView where Action == ErrorDismissAction {
+
+        /// Creates an error view with a single "OK" button.
+        init(
+            error: any Error,
+            options: MirageErrorUtils.ErrorDescriptionOptions,
+            buttonText: String = "OK",
+            onButtonTapped: @escaping () -> Void,
+        ) {
+            self.title = (error as? (any MirageError))?.title ?? "Error"
+            self.summary = (error as? (any MirageError))?.summary ?? error.localizedDescription
+            self.details = (error as? (any MirageError))?.details
+            self.diagnostics = (error as? (any MirageError))?.diagnostics(options: options)
+            self.actions = [.ok]
+            self.onAction = { _ in onButtonTapped() }
+        }
+
+        /// Creates an error view with a single "OK" button from a Notice.
+        init(
+            notice: Notice,
+            buttonText: String = "OK",
+            onButtonTapped: @escaping () -> Void,
+        ) {
+            self.title = notice.title ?? notice.kind.title
+            self.summary = notice.summary
+            self.details = notice.details
+            self.diagnostics = nil
+            self.actions = [.ok]
+            self.onAction = { _ in onButtonTapped() }
+        }
+
+        /// Creates an error view with a single "OK" button from raw strings.
+        init(
+            title: String,
+            summary: String,
+            details: String? = nil,
+            buttonText: String = "OK",
+            onButtonTapped: @escaping () -> Void,
+        ) {
+            self.title = title
+            self.summary = summary
+            self.details = details
+            self.diagnostics = nil
+            self.actions = [.ok]
+            self.onAction = { _ in onButtonTapped() }
         }
     }
 
@@ -141,22 +207,34 @@
 
         static func decodeFailedError() -> any MirageError {
             do {
-                _ = try JSONCoder.shared.decode(Test.self, from: Data("".utf8))
+                _ = try Jayson.shared.decode(Test.self, from: Data("".utf8))
                 throw NSError(domain: "Test", code: 0, userInfo: nil)
             } catch {
-                return JSONError(
+                return JaysonError(
                     process: .decode,
-                    underlyingErrors: [error],
+                    underlyingError: error,
                 )
             }
         }
     }
 
-    #Preview {
+    private enum PreviewAction: String { case retry = "Retry"; case cancel = "Cancel" }
+
+    #Preview("Single button") {
         ErrorView(
             error: Test.decodeFailedError(),
             options: .verbose,
         ) {}
+    }
+
+    #Preview("Multiple buttons") {
+        ErrorView(
+            error: Test.decodeFailedError(),
+            options: .verbose,
+            actions: [PreviewAction.retry, .cancel],
+        ) { action in
+            print("Tapped: \(action.rawValue)")
+        }
     }
 
 #endif

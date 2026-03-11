@@ -17,8 +17,8 @@
         // MARK: - Properties
 
         public let label: String
-        public let caption: Message?
-        public let footnote: Message?
+        public let caption: Notice?
+        public let footnote: Notice?
 
         @Binding private var date: Date
 
@@ -33,7 +33,7 @@
 
         // MARK: - Initializers
 
-        public init(_ date: Binding<Date>, label: String, caption: Message? = nil, footnote: Message? = nil) {
+        public init(_ date: Binding<Date>, label: String, caption: Notice? = nil, footnote: Notice? = nil) {
             _date = date
             self.label = label
             self.caption = caption
@@ -49,7 +49,7 @@
                         .font(.headline)
                     if let caption {
                         Spacer()
-                        MessageLabel(caption)
+                        NoticeLabel(caption)
                             .font(.caption)
                             .truncationMode(.middle)
                     }

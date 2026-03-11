@@ -9,7 +9,9 @@ public extension Int {
 
     // MARK: - String Conversion
 
-    func string(grouping: NumberFormatStyleConfiguration.Grouping = .automatic) -> String {
+    func string(
+        grouping: NumberFormatStyleConfiguration.Grouping = .automatic,
+    ) -> String {
         formatted(.number.grouping(grouping))
     }
 }

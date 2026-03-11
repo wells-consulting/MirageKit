@@ -10,8 +10,13 @@ public extension String {
 
     // MARK: - Properties
 
-    var isAllWhitespace: Bool {
+    var isBlank: Bool {
         trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Returns `nil` if the string is blank, otherwise returns `self`
+    var nilIfBlank: String? {
+        isBlank ? nil : self
     }
 
     // MARK: - Truncation
@@ -38,20 +43,28 @@ public extension String {
 
     // MARK: - Trimming
 
-    /// Removes whitespace and newlines from beginning of string
-    func removingLeadingWhitespace() -> String {
-        let value = self
-        return String(value.trimmingPrefix(while: { $0.isWhitespace || $0.isNewline }))
-    }
-
-    /// Removes whitespace and newlines from end of string
-    /// Convenience function for String.trimmingCharacters(in: .whitespacesAndNewLines)
-    func removingTrailingWhitespace() -> String {
+    /// Removes whitespace and newlines from both ends
+    func trimmed() -> String {
         trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Removes instances of a string from end of a string
-    func removingTrailingInstances(of string: String) -> String {
+    /// Removes whitespace and newlines from beginning of string
+    func trimmedStart() -> String {
+        String(trimmingPrefix(while: { $0.isWhitespace || $0.isNewline }))
+    }
+
+    /// Removes whitespace and newlines from end of string
+    func trimmedEnd() -> String {
+        guard let lastNonWhitespace = lastIndex(
+            where: { !$0.isWhitespace && !$0.isNewline },
+        ) else {
+            return ""
+        }
+        return String(self[...lastNonWhitespace])
+    }
+
+    /// Removes repeating instances of a string from end of a string
+    func trimmingSuffix(_ string: String) -> String {
         var value = self
         while value.hasSuffix(string) {
             value = String(value.dropLast(string.count))
@@ -138,6 +151,23 @@ public extension String {
             lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
         }
     }
+}
+
+// MARK: - Optional String
+
+public extension String? {
+
+    /// Returns `true` if the string is `nil` or blank (whitespace only)
+    var isBlank: Bool {
+        self?.isBlank ?? true
+    }
+}
+
+// MARK: - Collection
+
+public extension Collection {
+
+    var isNotEmpty: Bool { !isEmpty }
 }
 
 private let decimalFormatter: NumberFormatter = {

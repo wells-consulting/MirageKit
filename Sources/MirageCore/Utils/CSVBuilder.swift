@@ -23,31 +23,33 @@ public final class CSVBuilder {
         rows.joined(separator: "\n")
     }
 
-    public func saveToDownloadsFolder(
-        filename: String,
-    ) throws(CSVError) {
+    #if canImport(Darwin)
+        public func saveToDownloadsFolder(
+            filename: String,
+        ) throws(CSVError) {
 
-        rows.insert(headerRow, at: 0)
+            rows.insert(headerRow, at: 0)
 
-        let data = Data(text.utf8)
+            let data = Data(text.utf8)
 
-        do {
-            let url = try FileManager.default.url(
-                for: .downloadsDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: true,
-            ).appendingPathComponent(filename)
+            do {
+                let url = try FileManager.default.url(
+                    for: .downloadsDirectory,
+                    in: .userDomainMask,
+                    appropriateFor: nil,
+                    create: true,
+                ).appendingPathComponent(filename)
 
-            try data.write(to: url, options: [.atomic, .completeFileProtection])
-        } catch {
-            throw .saveToDownloadsFolder(
-                filename: filename,
-                data: data,
-                error: error,
-            )
+                try data.write(to: url, options: [.atomic, .completeFileProtection])
+            } catch {
+                throw .saveToDownloadsFolder(
+                    filename: filename,
+                    data: data,
+                    error: error,
+                )
+            }
         }
-    }
+    #endif
 
     public func save(to url: URL) throws(CSVError) {
 
@@ -56,7 +58,11 @@ public final class CSVBuilder {
         let data = Data(text.utf8)
 
         do {
-            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            #if canImport(Darwin)
+                try data.write(to: url, options: [.atomic, .completeFileProtection])
+            #else
+                try data.write(to: url, options: [.atomic])
+            #endif
         } catch {
             throw .saveTo(url, data: data, error: error)
         }

@@ -67,7 +67,7 @@ public final class DecimalValidator: Validator {
             case let .maxFractionalDigits(maxFractionalDigits):
                 let components = text.components(separatedBy: Locale.current.decimalSeparator ?? ".")
                 if components.count == 2 {
-                    let trailingDigits = components[1].removingTrailingInstances(of: "0")
+                    let trailingDigits = components[1].trimmingSuffix("0")
                     if trailingDigits.count > maxFractionalDigits {
                         violations.append(.aboveMaxFractionalDigits)
                     }

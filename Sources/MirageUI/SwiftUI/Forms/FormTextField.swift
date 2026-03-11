@@ -17,9 +17,9 @@
         // MARK: - Properties
 
         public let label: String
-        public let caption: Message?
+        public let caption: Notice?
         private let style: Style
-        public let footnote: Message?
+        public let footnote: Notice?
 
         // MARK: - State & Bindings
 
@@ -27,7 +27,7 @@
 
         // MARK: - Initializers
 
-        public init(_ text: Binding<String>, label: String, caption: Message? = nil, style: Style, hint: String? = nil, footnote: Message? = nil) {
+        public init(_ text: Binding<String>, label: String, caption: Notice? = nil, style: Style, hint: String? = nil, footnote: Notice? = nil) {
             _text = text
             self.label = label
             self.caption = caption

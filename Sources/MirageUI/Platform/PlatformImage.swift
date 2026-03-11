@@ -22,13 +22,14 @@
         }
 
         func jpegData(compressionQuality: CGFloat) -> Data? {
-            let cgImage = cgImage(forProposedRect: nil, context: nil, hints: nil)!
+            guard let cgImage = cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                return nil
+            }
             let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
-            let jpegData = bitmapRep.representation(
+            return bitmapRep.representation(
                 using: NSBitmapImageRep.FileType.jpeg,
                 properties: [.compressionFactor: compressionQuality],
-            )!
-            return jpegData
+            )
         }
     }
 

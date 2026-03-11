@@ -36,10 +36,19 @@ extension Array: SummaryProviding where Element: SummaryProviding {
 ///
 /// print(obfuscated + random)```
 public extension [UInt8] {
-    func decodeSecret() -> String {
+
+    /// Decodes an XOR-obfuscated byte array back into a UTF-8 string.
+    ///
+    /// Throws if the decoded bytes are not valid UTF-8.
+    func decodeSecret() throws -> String {
         let r = prefix(count / 2)
         let x = suffix(count / 2)
         let bytes = zip(r, x).map(^)
-        return String(bytes: bytes, encoding: .utf8)!
+        guard let result = String(bytes: bytes, encoding: .utf8) else {
+            throw DecodingError.dataCorrupted(
+                .init(codingPath: [], debugDescription: "Decoded bytes are not valid UTF-8."),
+            )
+        }
+        return result
     }
 }

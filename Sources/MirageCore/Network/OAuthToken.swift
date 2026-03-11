@@ -32,11 +32,11 @@ public struct OAuthToken: Codable, CustomStringConvertible, Sendable {
     public var description: String {
         if let createdAt, let expiresAt = expiration {
             if expiresAt < .now {
-                let durationDescription = Date.debugDurationDescriptionString(from: expiresAt, to: .now)
+                let durationDescription = Date.durationLabel(from: expiresAt, to: .now)
                 let text = "Created on \(createdAt.formatted(date: .abbreviated, time: .shortened)), expired on \(expiresAt.formatted(date: .abbreviated, time: .shortened)) (\(durationDescription))"
                 return text
             } else {
-                let durationDescription = Date.debugDurationDescriptionString(from: .now, to: expiresAt)
+                let durationDescription = Date.durationLabel(from: .now, to: expiresAt)
                 let text = "Created on \(createdAt.formatted(date: .abbreviated, time: .shortened)), expires on \(expiresAt.formatted(date: .abbreviated, time: .shortened)) (\(durationDescription))"
                 return text
             }

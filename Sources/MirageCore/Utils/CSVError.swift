@@ -13,9 +13,9 @@ public struct CSVError: MirageError {
 
     public let refcode: String?
     public let summary: String
-    public let alertTitle: String?
+    public let title: String?
     public let details: String?
-    public let underlyingErrors: [any Error]?
+    public let underlyingError: (any Error)?
     public let userInfo: [String: any Sendable]?
 
     // MARK: - Lifecycle
@@ -24,18 +24,18 @@ public struct CSVError: MirageError {
 
     init(
         summary: String? = nil,
-        alertTitle: String? = nil,
+        title: String? = nil,
         details: String? = nil,
-        underlyingErrors: [any Error]? = nil,
+        underlyingError: (any Error)? = nil,
         userInfo: [String: any Sendable]? = nil,
         refcode: String? = nil,
     ) {
         self.refcode = refcode
-        self.summary = summary ?? "Could not save CSV file."
-        self.alertTitle = alertTitle ?? "CSV Error"
+        self.summary = summary ?? "Failed to save file."
+        self.title = title ?? "CSV Error"
         self.details = details
         self.userInfo = userInfo
-        self.underlyingErrors = underlyingErrors
+        self.underlyingError = underlyingError
     }
 
     // MARK: Factory Methods
@@ -47,8 +47,8 @@ public struct CSVError: MirageError {
     ) -> Self {
 
         .init(
-            summary: "Could not save \(data.count.formatted(.byteCount(style: .file))) CSV file to \"\(url.absoluteString)\".",
-            underlyingErrors: [error],
+            summary: "Failed to save \(data.count.formatted(.byteCount(style: .file))) to \"\(url.absoluteString)\".",
+            underlyingError: error,
             userInfo: ["url": url])
     }
 
@@ -59,8 +59,8 @@ public struct CSVError: MirageError {
     ) -> Self {
 
         .init(
-            summary: "Could not save \(data.count.formatted(.byteCount(style: .file))) CSV file \"\(filename)\" to the downloads folder.",
-            underlyingErrors: [error],
+            summary: "Failed to save \"\(filename)\" (\(data.count.formatted(.byteCount(style: .file)))) to Downloads.",
+            underlyingError: error,
             userInfo: ["filename": filename])
     }
 }

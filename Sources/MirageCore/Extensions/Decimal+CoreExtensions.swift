@@ -9,7 +9,10 @@ public extension Decimal {
 
     // MARK: - String Conversion
 
-    func string(precision: Int = 1, grouping: NumberFormatStyleConfiguration.Grouping = .automatic) -> String {
+    func string(
+        precision: Int = 1,
+        grouping: NumberFormatStyleConfiguration.Grouping = .automatic,
+    ) -> String {
         formatted(
             .number
                 .precision(.fractionLength(precision))

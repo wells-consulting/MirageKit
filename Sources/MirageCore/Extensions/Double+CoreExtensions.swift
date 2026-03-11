@@ -10,7 +10,10 @@ public extension Double {
 
     // MARK: - String Conversion
 
-    func string(precision: Int = 1, grouping: NumberFormatStyleConfiguration.Grouping = .automatic) -> String {
+    func string(
+        precision: Int = 1,
+        grouping: NumberFormatStyleConfiguration.Grouping = .automatic,
+    ) -> String {
         formatted(
             .number
                 .precision(.fractionLength(precision))
@@ -30,7 +33,10 @@ public extension Double {
     }
 
     /// Value as currency string like "$33.00"
-    func currencyString(precision: Int = 2, grouping: NumberFormatStyleConfiguration.Grouping = .automatic) -> String {
+    func currencyString(
+        precision: Int = 2,
+        grouping: NumberFormatStyleConfiguration.Grouping = .automatic,
+    ) -> String {
         formatted(
             .currency(code: Locale.current.currency?.identifier ?? "USD")
                 .precision(.fractionLength(precision))

@@ -45,7 +45,7 @@ public final class TextValidator: Validator {
         for requirement in requirements {
             switch requirement {
             case .notOnlyWhitespace:
-                if text.isAllWhitespace {
+                if text.isBlank {
                     violations.append(.onlyWhitespace)
                 }
 
