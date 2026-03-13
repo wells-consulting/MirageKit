@@ -11,16 +11,15 @@ let package = Package(
         .macOS(.v15),
     ],
     products: [
-        .library(name: "MirageCore", targets: ["MirageCore"]),
-        .library(name: "MirageUI", targets: ["MirageUI"]),
+        .library(name: "MirageKit", targets: ["MirageKit"]),
     ],
     dependencies: [
         .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.63.0"),
     ],
     targets: [
         .target(
-            name: "MirageCore",
-            path: "Sources/MirageCore",
+            name: "MirageKit",
+            path: "Sources",
             swiftSettings: [
                 .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
                 .enableUpcomingFeature("InferIsolatedConformances"),
@@ -31,27 +30,9 @@ let package = Package(
             ],
         ),
         .testTarget(
-            name: "MirageCoreTests",
-            dependencies: ["MirageCore"],
-            path: "Tests/MirageCoreTests",
-        ),
-        .target(
-            name: "MirageUI",
-            dependencies: ["MirageCore"],
-            path: "Sources/MirageUI",
-            swiftSettings: [
-                .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
-                .enableUpcomingFeature("InferIsolatedConformances"),
-                .enableUpcomingFeature("ExistentialAny"),
-            ],
-            plugins: [
-                .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins"),
-            ],
-        ),
-        .testTarget(
-            name: "MirageUITests",
-            dependencies: ["MirageUI"],
-            path: "Tests/MirageUITests",
+            name: "Tests",
+            dependencies: ["MirageKit"],
+            path: "Tests",
         ),
     ],
 )
