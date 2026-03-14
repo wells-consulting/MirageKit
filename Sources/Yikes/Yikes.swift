@@ -7,7 +7,7 @@ import Foundation
 
 /// Common protocol for errors thrown by MirageKit modules.
 
-public protocol Yikes: Error, LocalizedError, Sendable {
+public protocol Yikes: Error, LocalizedError, CustomStringConvertible, Sendable {
 
     //
     // #!/usr/bin/env bash
@@ -59,6 +59,19 @@ public protocol Yikes: Error, LocalizedError, Sendable {
 // MARK: - Default Implementations
 
 public extension Yikes {
+
+    /// Concise human-readable description for string interpolation.
+    var description: String {
+        var result = if let title {
+            "\(title): \(summary)"
+        } else {
+            summary
+        }
+        if let refcode {
+            result += " [\(refcode)]"
+        }
+        return result
+    }
 
     /// Default LocalizedError
     var errorDescription: String? {
