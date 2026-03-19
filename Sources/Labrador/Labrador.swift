@@ -58,6 +58,10 @@ public actor Labrador {
         self.baseURL = configuration.baseURL
         self.defaultTimeout = configuration.timeout
 
+        for (name, value) in configuration.headers {
+            additionalHeaders[name] = value
+        }
+
         if let accessToken = configuration.auth?.accessToken {
             additionalHeaders["Authorization"] = "Bearer \(accessToken)"
         }
