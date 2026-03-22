@@ -3,6 +3,6 @@
 // This file is part of MirageKit and is released under the MIT License.
 //
 
-public enum MirageKit {
+public enum MirageKitInfo {
     public static let version = "0.6.0"
 }
