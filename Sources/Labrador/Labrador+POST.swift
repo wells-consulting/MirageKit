@@ -18,6 +18,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Data? {
 
         try await request(
@@ -26,6 +27,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             logging: logging,
+            logContext: logContext,
         ).0
     }
 
@@ -36,6 +38,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Data? {
 
         let payload = Payload(
@@ -54,6 +57,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest).0
@@ -67,6 +71,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         try await request(
@@ -78,6 +83,7 @@ public extension Labrador {
             timeout: timeout,
             userInfo: userInfo,
             logging: logging,
+            logContext: logContext,
         )
     }
 
@@ -87,6 +93,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Data? {
 
         try await request(
@@ -96,6 +103,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             logging: logging,
+            logContext: logContext,
         ).0
     }
 
@@ -107,6 +115,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         try await request(
@@ -118,6 +127,7 @@ public extension Labrador {
             timeout: timeout,
             userInfo: userInfo,
             logging: logging,
+            logContext: logContext,
         )
     }
 
@@ -129,6 +139,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Data? {
 
         let payload = payload(for: form)
@@ -142,6 +153,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest).0
@@ -155,6 +167,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         let payload = payload(for: form)
@@ -168,6 +181,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(
@@ -185,6 +199,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Data? {
 
         let payload = payload(for: form)
@@ -198,6 +213,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest).0
@@ -211,6 +227,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         let payload = payload(for: form)
@@ -224,6 +241,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(

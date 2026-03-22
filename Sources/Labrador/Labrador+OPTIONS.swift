@@ -21,6 +21,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> HTTPURLResponse {
 
         let (_, response) = try await request(
@@ -29,6 +30,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             logging: logging,
+            logContext: logContext,
         )
 
         return response

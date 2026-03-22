@@ -22,6 +22,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Output> {
 
         let payload: Payload? = nil
@@ -35,6 +36,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithResponse(clientRequest, outputType: outputType, userInfo: userInfo)
@@ -48,6 +50,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Output> {
 
         let data = try json.encode(input, userInfo: userInfo)
@@ -68,6 +71,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithResponse(clientRequest, outputType: outputType, userInfo: userInfo)
@@ -81,6 +85,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Output> {
 
         let data = try json.encode(input, userInfo: userInfo)
@@ -101,6 +106,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithResponse(clientRequest, outputType: outputType, userInfo: userInfo)
@@ -114,6 +120,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Output> {
 
         let data = try json.encode(input, userInfo: userInfo)
@@ -134,6 +141,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithResponse(clientRequest, outputType: outputType, userInfo: userInfo)
@@ -147,6 +155,7 @@ public extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Output> {
 
         let data = try json.encode(input, userInfo: userInfo)
@@ -167,6 +176,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithResponse(clientRequest, outputType: outputType, userInfo: userInfo)
@@ -182,6 +192,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Data> {
 
         let payload = Payload(
@@ -200,6 +211,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithDataResponse(clientRequest)
@@ -212,6 +224,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Data> {
 
         let payload = payload(for: form)
@@ -225,6 +238,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithDataResponse(clientRequest)
@@ -237,6 +251,7 @@ public extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Response<Data> {
 
         let payload = payload(for: form)
@@ -250,6 +265,7 @@ public extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await requestWithDataResponse(clientRequest)

@@ -23,6 +23,7 @@ public extension Labrador {
         _ url: URL,
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
+        logContext: String? = nil,
     ) -> AsyncStream<DownloadEvent> {
 
         let urlSession = urlSession
