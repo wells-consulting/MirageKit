@@ -5,6 +5,22 @@
 
 import Foundation
 
+/// Classifies errors by their expected recovery behavior.
+public enum ErrorKind: String, Sendable {
+
+    /// Transient failures that may succeed on retry (network timeout, temporary
+    /// server error, rate limiting).
+    case transient
+
+    /// Persistent failures where retrying the same operation won't help without
+    /// user intervention (bad credentials, missing resource, permission denied).
+    case persistent
+
+    /// Configuration errors where the user needs to change a setting before
+    /// retrying (invalid URL, missing host, bad port).
+    case configuration
+}
+
 /// Common protocol for errors thrown by MirageKit modules.
 
 public protocol Yikes: Error, LocalizedError, CustomStringConvertible, Sendable {
@@ -54,6 +70,10 @@ public protocol Yikes: Error, LocalizedError, CustomStringConvertible, Sendable 
     /// Unstructured data that might be useful for a client to
     /// silently handle the error in code.
     var userInfo: [String: any Sendable]? { get }
+
+    /// Classifies this error so consumers can determine appropriate
+    /// recovery behavior (e.g. retry, prompt user, fix configuration).
+    var kind: ErrorKind { get }
 }
 
 // MARK: - Default Implementations
@@ -87,6 +107,7 @@ public extension Yikes {
     var details: String? { nil }
     var underlyingError: (any Error)? { nil }
     var userInfo: [String: any Sendable]? { nil }
+    var kind: ErrorKind { .persistent }
 
     /// Produce a human-readable diagnostic string for this error.
     func diagnostics(options: DoesNotCompute.Options) -> String? {

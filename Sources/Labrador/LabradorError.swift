@@ -41,6 +41,30 @@ public struct LabradorError: Yikes {
         return try? Jayson.shared.decode(T.self, from: responseData)
     }
 
+    public var kind: ErrorKind {
+        // Transient HTTP status codes (match RetryPolicy.defaultRetryCodes)
+        if let statusCode {
+            switch statusCode {
+            case .requestTimeout, .tooManyRequests:
+                return .transient
+            case .badGateway, .serviceUnavailable, .gatewayTimeout:
+                return .transient
+            default:
+                return .persistent
+            }
+        }
+        // Transient URLError codes
+        if let urlError = underlyingError as? Foundation.URLError {
+            switch urlError.code {
+            case .timedOut, .networkConnectionLost, .notConnectedToInternet:
+                return .transient
+            default:
+                return .persistent
+            }
+        }
+        return .persistent
+    }
+
     // MARK: - Lifecycle
 
     // MARK: Initializers

@@ -23,6 +23,8 @@ public struct EarlError: Yikes {
     public let urlString: String?
     public let urlComponents: URLComponents?
 
+    public var kind: ErrorKind { .configuration }
+
     // MARK: - Lifecycle
 
     // MARK: Initializer
