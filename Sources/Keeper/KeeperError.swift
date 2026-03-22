@@ -51,7 +51,8 @@ public struct KeeperError: Yikes {
 
     static func itemNotFound(key: String) -> KeeperError {
         KeeperError(
-            summary: "No item found for key \"\(key)\".",
+            summary: "Item not found.",
+            details: "Key: \(key).",
             status: errSecItemNotFound,
             refcode: "AXF9",
         )
@@ -59,7 +60,8 @@ public struct KeeperError: Yikes {
 
     static func saveFailed(key: String, status: OSStatus) -> KeeperError {
         KeeperError(
-            summary: "Could not save item for key \"\(key)\" (OSStatus \(status)).",
+            summary: "Unable to save to the keychain.",
+            details: "Key: \(key), OSStatus: \(status).",
             status: status,
             refcode: "4FJC",
         )
@@ -67,7 +69,8 @@ public struct KeeperError: Yikes {
 
     static func loadFailed(key: String, status: OSStatus) -> KeeperError {
         KeeperError(
-            summary: "Could not load item for key \"\(key)\" (OSStatus \(status)).",
+            summary: "Unable to load from the keychain.",
+            details: "Key: \(key), OSStatus: \(status).",
             status: status,
             refcode: "4T85",
         )
@@ -75,7 +78,8 @@ public struct KeeperError: Yikes {
 
     static func deleteFailed(key: String, status: OSStatus) -> KeeperError {
         KeeperError(
-            summary: "Could not delete item for key \"\(key)\" (OSStatus \(status)).",
+            summary: "Unable to delete from the keychain.",
+            details: "Key: \(key), OSStatus: \(status).",
             status: status,
             refcode: "9UUD",
         )
@@ -83,7 +87,8 @@ public struct KeeperError: Yikes {
 
     static func encodingFailed(key: String, underlyingError: any Error) -> KeeperError {
         KeeperError(
-            summary: "Could not encode item for key \"\(key)\".",
+            summary: "Unable to save to the keychain.",
+            details: "Key: \(key). Encoding failed.",
             underlyingError: underlyingError,
             refcode: "WWKF",
         )
@@ -91,7 +96,8 @@ public struct KeeperError: Yikes {
 
     static func decodingFailed(key: String, underlyingError: any Error) -> KeeperError {
         KeeperError(
-            summary: "Could not decode item for key \"\(key)\".",
+            summary: "Unable to load from the keychain.",
+            details: "Key: \(key). Decoding failed.",
             underlyingError: underlyingError,
             refcode: "WWKF",
         )

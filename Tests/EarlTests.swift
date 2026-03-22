@@ -494,27 +494,29 @@ struct EarlErrorTests {
         #expect(error.title == "URL Error")
     }
 
-    @Test("missingScheme includes URL string in summary")
+    @Test("missingScheme has user-friendly summary and technical details")
     func missingSchemeMessage() {
         let error = EarlError.missingScheme(urlString: "://host", urlComponents: nil)
-        #expect(error.summary.contains("Missing scheme"))
-        #expect(error.summary.contains("://host"))
+        #expect(error.summary == "Invalid URL.")
+        #expect(error.details?.contains("Missing scheme") == true)
+        #expect(error.details?.contains("://host") == true)
         #expect(error.urlString == "://host")
     }
 
-    @Test("missingHost includes URL string in summary")
+    @Test("missingHost has user-friendly summary and technical details")
     func missingHostMessage() {
         let error = EarlError.missingHost(urlString: "https://", urlComponents: nil)
-        #expect(error.summary.contains("Missing host"))
-        #expect(error.summary.contains("https://"))
+        #expect(error.summary == "Invalid URL.")
+        #expect(error.details?.contains("Missing host") == true)
+        #expect(error.details?.contains("https://") == true)
         #expect(error.urlString == "https://")
     }
 
-    @Test("invalidURL includes URL string in summary")
+    @Test("invalidURL has user-friendly summary and technical details")
     func invalidURLMessage() {
         let error = EarlError.invalidURL(urlString: "bad", urlComponents: nil)
-        #expect(error.summary.contains("Invalid URL"))
-        #expect(error.summary.contains("bad"))
+        #expect(error.summary == "Invalid URL.")
+        #expect(error.details?.contains("bad") == true)
         #expect(error.urlString == "bad")
     }
 

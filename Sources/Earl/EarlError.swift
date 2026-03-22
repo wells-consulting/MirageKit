@@ -59,7 +59,8 @@ public struct EarlError: Yikes {
     ) -> Self {
 
         .init(
-            summary: "Missing scheme in \"\(urlString)\".",
+            summary: "Invalid URL.",
+            details: "Missing scheme in \"\(urlString)\".",
             urlString: urlString,
             urlComponents: urlComponents,
         )
@@ -71,7 +72,8 @@ public struct EarlError: Yikes {
     ) -> Self {
 
         .init(
-            summary: "Missing host in \"\(urlString)\".",
+            summary: "Invalid URL.",
+            details: "Missing host in \"\(urlString)\".",
             urlString: urlString,
             urlComponents: urlComponents,
         )
@@ -83,7 +85,8 @@ public struct EarlError: Yikes {
     ) -> Self {
 
         .init(
-            summary: "Invalid URL \"\(urlString)\".",
+            summary: "Invalid URL.",
+            details: "Could not parse \"\(urlString)\".",
             urlString: urlString,
             urlComponents: urlComponents,
         )

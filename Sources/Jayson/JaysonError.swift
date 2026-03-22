@@ -43,9 +43,9 @@ public struct JaysonError: Yikes {
         refcode: String? = nil,
     ) {
 
-        self.title = title ?? "Encoding Error"
+        self.title = title ?? (process == .encode ? "Encoding Error" : "Decoding Error")
 
-        self.summary = summary ?? "Operation failed."
+        self.summary = summary ?? (process == .encode ? "Encoding failed." : "Decoding failed.")
         self.details = details
 
         self.underlyingError = underlyingError
@@ -64,31 +64,31 @@ public struct JaysonError: Yikes {
 
     public static func wrap(_ error: DecodingError, refcode: String? = nil) -> JaysonError? {
 
-        let summary: String
+        let details: String
 
         var underlyingError: (any Error)?
 
         switch error {
         case let .dataCorrupted(context):
             underlyingError = context.underlyingError
-            summary = "Data corrupted\(context.atPathString)."
+            details = "Data corrupted\(context.atPathString)."
         case let .keyNotFound(key, context):
             underlyingError = context.underlyingError
-            summary = "Missing key \"\(key.stringValue)\"\(context.atPathString)."
+            details = "Missing key \"\(key.stringValue)\"\(context.atPathString)."
         case let .valueNotFound(type, context):
             underlyingError = context.underlyingError
-            summary = "Missing \(type)\(context.atPathString)."
+            details = "Missing \(type)\(context.atPathString)."
         case let .typeMismatch(type, context):
             underlyingError = context.underlyingError
-            summary = "Expected \(type)\(context.atPathString)."
+            details = "Expected \(type)\(context.atPathString)."
         default:
             return nil
         }
 
         return JaysonError(
             process: .decode,
-            summary: summary,
-            title: "Decoding Error",
+            summary: "The data could not be read.",
+            details: details,
             underlyingError: underlyingError,
             refcode: refcode,
         )
