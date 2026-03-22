@@ -47,7 +47,8 @@ public struct CaseyError: Yikes {
     ) -> Self {
 
         .init(
-            summary: "Failed to save \(data.count.formatted(.byteCount(style: .file))) to \"\(url.absoluteString)\".",
+            summary: "Failed to save file.",
+            details: "\(data.count.formatted(.byteCount(style: .file))) to \"\(url.lastPathComponent)\".",
             underlyingError: error,
             userInfo: ["url": url])
     }
@@ -59,7 +60,8 @@ public struct CaseyError: Yikes {
     ) -> Self {
 
         .init(
-            summary: "Failed to save \"\(filename)\" (\(data.count.formatted(.byteCount(style: .file)))) to Downloads.",
+            summary: "Failed to save \"\(filename)\" to Downloads.",
+            details: "\(data.count.formatted(.byteCount(style: .file))).",
             underlyingError: error,
             userInfo: ["filename": filename])
     }

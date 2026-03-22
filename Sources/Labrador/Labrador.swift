@@ -132,7 +132,7 @@ public actor Labrador {
                 )
             } catch {
                 throw LabradorError(
-                    summary: "Request failed with an unexpected error.",
+                    summary: "Something went wrong.",
                     underlyingError: error,
                     clientRequest: clientRequest,
                 )
@@ -140,7 +140,8 @@ public actor Labrador {
 
             guard let httpURLResponse = urlResponse as? HTTPURLResponse else {
                 throw LabradorError(
-                    summary: "Received a non-HTTP response.",
+                    summary: "Unable to reach the server.",
+                    details: "Received a non-HTTP response.",
                     clientRequest: clientRequest,
                     responseData: data,
                 )
@@ -196,7 +197,8 @@ public actor Labrador {
                     data = responseData
                     httpURLResponse = response
                     lastError = LabradorError(
-                        summary: "Request failed: \(response.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: response.statusCode).capitalized).",
+                        summary: "The server is temporarily unavailable.",
+                        details: "\(response.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: response.statusCode)).",
                         clientRequest: clientRequest,
                         httpURLResponse: response,
                         responseData: responseData,
@@ -232,7 +234,8 @@ public actor Labrador {
 
         guard let data, let httpURLResponse else {
             throw lastError ?? LabradorError(
-                summary: "Request failed after \(maxAttempts) attempts.",
+                summary: "Unable to reach the server.",
+                details: "Request failed after \(maxAttempts) attempts.",
                 clientRequest: clientRequest,
             )
         }
@@ -255,7 +258,8 @@ public actor Labrador {
 
         guard let statusCode = StatusCode(rawValue: httpURLResponse.statusCode) else {
             throw LabradorError(
-                summary: "Unrecognized status code: \(httpURLResponse.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: httpURLResponse.statusCode).capitalized).",
+                summary: "The server returned an unexpected response.",
+                details: "\(httpURLResponse.statusCode) \(HTTPURLResponse.localizedString(forStatusCode: httpURLResponse.statusCode)).",
                 clientRequest: clientRequest,
                 httpURLResponse: httpURLResponse,
                 responseData: data,
@@ -266,7 +270,8 @@ public actor Labrador {
 
         guard statusCode.isSuccess else {
             throw LabradorError(
-                summary: "Request failed: \(statusCode.description).",
+                summary: Self.userFacingSummary(for: statusCode),
+                details: statusCode.description,
                 clientRequest: clientRequest,
                 httpURLResponse: httpURLResponse,
                 responseData: data,
@@ -274,6 +279,27 @@ public actor Labrador {
         }
 
         return (data, httpURLResponse)
+    }
+
+    private static func userFacingSummary(for statusCode: StatusCode) -> String {
+        switch statusCode {
+        case .unauthorized, .forbidden:
+            "You don't have access to this resource."
+        case .notFound:
+            "The requested content was not found."
+        case .requestTimeout:
+            "The request timed out."
+        case .tooManyRequests:
+            "Too many requests. Please try again later."
+        case _ where statusCode.isClientError:
+            "The request could not be completed."
+        case .serviceUnavailable:
+            "The server is temporarily unavailable."
+        case _ where statusCode.isServerError:
+            "The server encountered an error."
+        default:
+            "Something went wrong."
+        }
     }
 
     private static func summary(for error: Foundation.URLError) -> String {

@@ -441,7 +441,8 @@ struct JaysonErrorTests {
         let wrapped = JaysonError.wrap(decodingError)
         #expect(wrapped != nil)
         #expect(wrapped?.process == .decode)
-        #expect(wrapped?.summary.contains("corrupted") == true)
+        #expect(wrapped?.summary == "The data could not be read.")
+        #expect(wrapped?.details?.contains("corrupted") == true)
     }
 
     @Test("JaysonError - wrap keyNotFound")
@@ -451,7 +452,8 @@ struct JaysonErrorTests {
         let decodingError = DecodingError.keyNotFound(key, context)
         let wrapped = JaysonError.wrap(decodingError)
         #expect(wrapped != nil)
-        #expect(wrapped?.summary.contains("name") == true)
+        #expect(wrapped?.summary == "The data could not be read.")
+        #expect(wrapped?.details?.contains("name") == true)
     }
 
     @Test("JaysonError - wrap valueNotFound")
@@ -460,7 +462,8 @@ struct JaysonErrorTests {
         let decodingError = DecodingError.valueNotFound(Int.self, context)
         let wrapped = JaysonError.wrap(decodingError)
         #expect(wrapped != nil)
-        #expect(wrapped?.summary.contains("Missing") == true)
+        #expect(wrapped?.summary == "The data could not be read.")
+        #expect(wrapped?.details?.contains("Missing") == true)
     }
 
     @Test("JaysonError - wrap typeMismatch")
@@ -470,18 +473,32 @@ struct JaysonErrorTests {
         let wrapped = JaysonError.wrap(decodingError)
         #expect(wrapped != nil)
         #expect(wrapped?.process == .decode)
+        #expect(wrapped?.summary == "The data could not be read.")
+        #expect(wrapped?.details?.contains("Expected") == true)
     }
 
-    @Test("JaysonError - title defaults to Encoding Error")
-    func titleDefault() {
+    @Test("JaysonError - title defaults to Encoding Error for encode")
+    func titleDefaultEncode() {
         let error = JaysonError(process: .encode)
         #expect(error.title == "Encoding Error")
     }
 
-    @Test("JaysonError - summary defaults when nil")
-    func summaryDefault() {
+    @Test("JaysonError - title defaults to Decoding Error for decode")
+    func titleDefaultDecode() {
         let error = JaysonError(process: .decode)
-        #expect(error.summary == "Operation failed.")
+        #expect(error.title == "Decoding Error")
+    }
+
+    @Test("JaysonError - summary defaults to Encoding failed for encode")
+    func summaryDefaultEncode() {
+        let error = JaysonError(process: .encode)
+        #expect(error.summary == "Encoding failed.")
+    }
+
+    @Test("JaysonError - summary defaults to Decoding failed for decode")
+    func summaryDefaultDecode() {
+        let error = JaysonError(process: .decode)
+        #expect(error.summary == "Decoding failed.")
     }
 
     @Test("JaysonError - data is converted to jsonText")
