@@ -26,6 +26,7 @@ public extension Labrador {
         contentType: ContentType = .binary,
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
+        logContext: String? = nil,
     ) -> AsyncStream<UploadEvent> {
 
         let urlSession = urlSession
@@ -80,6 +81,7 @@ public extension Labrador {
         method: Method = .post,
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
+        logContext: String? = nil,
     ) -> AsyncStream<UploadEvent> {
         upload(
             url,
@@ -88,6 +90,7 @@ public extension Labrador {
             contentType: .multipartForm(MultipartForm.boundary),
             headers: headers,
             timeout: timeout,
+            logContext: logContext,
         )
     }
 
@@ -97,6 +100,7 @@ public extension Labrador {
         method: Method = .post,
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
+        logContext: String? = nil,
     ) -> AsyncStream<UploadEvent> {
         upload(
             url,
@@ -105,6 +109,7 @@ public extension Labrador {
             contentType: .urlEncodedForm,
             headers: headers,
             timeout: timeout,
+            logContext: logContext,
         )
     }
 }

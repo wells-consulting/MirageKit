@@ -405,11 +405,13 @@ public extension Labrador {
         from urlRequest: URLRequest,
         options: RequestOptions? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> (Data, HTTPURLResponse) {
 
         let clientRequest = ClientRequest(
             urlRequest: urlRequest,
             logOptions: logging,
+            logContext: logContext,
         )
 
         return try await request(clientRequest, options: options)
@@ -420,11 +422,13 @@ public extension Labrador {
         as outputType: Output.Type,
         options: RequestOptions? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         let clientRequest = ClientRequest(
             urlRequest: urlRequest,
             logOptions: logging,
+            logContext: logContext,
         )
 
         let (data, _) = try await request(clientRequest, options: options)
@@ -444,6 +448,7 @@ extension Labrador {
         let payloadSummary: String?
         let timestamp: Date = .init()
         let logOptions: LogOptions?
+        let logContext: String?
 
         static let defaultTimeout: TimeInterval = Labrador.defaultTimeout
 
@@ -456,9 +461,11 @@ extension Labrador {
             headers: [String: String]?,
             timeout: TimeInterval?,
             defaultTimeout: TimeInterval = Self.defaultTimeout,
+            logContext: String? = nil,
         ) {
 
             self.id = requestCounter.increment()
+            self.logContext = logContext
 
             var urlRequest = URLRequest(url: url)
 
@@ -495,15 +502,21 @@ extension Labrador {
                 requestSummary += ", \(data.count.formatted(.byteCount(style: .memory)))"
             }
 
+            if let logContext {
+                requestSummary += " (\(logContext))"
+            }
+
             self.requestSummary = requestSummary
         }
 
         init(
             urlRequest: URLRequest,
             logOptions: LogOptions? = nil,
+            logContext: String? = nil,
         ) {
 
             self.id = requestCounter.increment()
+            self.logContext = logContext
 
             self.urlRequest = urlRequest
             self.logOptions = logOptions
@@ -521,6 +534,10 @@ extension Labrador {
 
             if let data = urlRequest.httpBody {
                 requestSummary += ", \(data.count.formatted(.byteCount(style: .memory)))"
+            }
+
+            if let logContext {
+                requestSummary += " (\(logContext))"
             }
 
             self.requestSummary = requestSummary
@@ -546,6 +563,7 @@ extension Labrador {
         let statusCode: StatusCode?
         let headers: [String: String]?
         let data: Data?
+        let logContext: String?
 
         let timestamp: Date = .init()
 
@@ -554,6 +572,7 @@ extension Labrador {
             self.requestID = clientRequest.id
             self.requestTimestamp = clientRequest.timestamp
             self.data = data
+            self.logContext = clientRequest.logContext
 
             if let httpURLResponse = urlResponse as? HTTPURLResponse {
                 let (statusCode, headers) = Self.extractHeaders(from: httpURLResponse)
@@ -612,6 +631,10 @@ extension Labrador {
                 }
             }
 
+            if let logContext {
+                parts.append("(\(logContext))")
+            }
+
             var description = parts.joined(separator: ", ")
 
             if let responseDescription {
@@ -633,6 +656,7 @@ extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> (Data?, HTTPURLResponse) {
 
         let clientRequest = ClientRequest(
@@ -644,6 +668,7 @@ extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest)
@@ -658,6 +683,7 @@ extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]? = nil,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         let payload: Payload? =
@@ -680,6 +706,7 @@ extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest, outputType: outputType, userInfo: userInfo)
@@ -692,6 +719,7 @@ extension Labrador {
         headers: [String: String]? = nil,
         timeout: TimeInterval?,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> (Data?, HTTPURLResponse) {
 
         let data = try json.encode(input, userInfo: nil)
@@ -711,6 +739,7 @@ extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest)
@@ -725,6 +754,7 @@ extension Labrador {
         timeout: TimeInterval? = nil,
         userInfo: [CodingUserInfoKey: any Sendable]?,
         logging: LogOptions? = nil,
+        logContext: String? = nil,
     ) async throws -> Output {
 
         let data = try json.encode(input, userInfo: userInfo)
@@ -745,6 +775,7 @@ extension Labrador {
             headers: headers,
             timeout: timeout,
             defaultTimeout: defaultTimeout,
+            logContext: logContext,
         )
 
         return try await request(clientRequest, outputType: outputType, userInfo: userInfo)
