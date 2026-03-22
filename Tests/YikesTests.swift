@@ -71,6 +71,99 @@ struct YikesDefaultsTests {
     }
 }
 
+// MARK: - ErrorKind
+
+@Suite("Yikes - ErrorKind")
+struct YikesErrorKindTests {
+
+    @Test("kind defaults to .persistent")
+    func kindDefault() {
+        let error = MinimalError(summary: "x")
+        #expect(error.kind == .persistent)
+    }
+
+    @Test("EarlError kind is .configuration")
+    func earlKind() {
+        let error = EarlError.invalidURL(urlString: "not a url", urlComponents: nil)
+        #expect(error.kind == .configuration)
+    }
+
+    @Test("LabradorError kind is .transient for 429")
+    func labradorTransientStatusCode() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 429,
+            httpVersion: nil,
+            headerFields: nil
+        )
+        let error = LabradorError(
+            summary: "Too many requests.",
+            httpURLResponse: response
+        )
+        #expect(error.kind == .transient)
+    }
+
+    @Test("LabradorError kind is .transient for 503")
+    func labradorTransientServiceUnavailable() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 503,
+            httpVersion: nil,
+            headerFields: nil
+        )
+        let error = LabradorError(
+            summary: "Service unavailable.",
+            httpURLResponse: response
+        )
+        #expect(error.kind == .transient)
+    }
+
+    @Test("LabradorError kind is .persistent for 404")
+    func labradorPersistentNotFound() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 404,
+            httpVersion: nil,
+            headerFields: nil
+        )
+        let error = LabradorError(
+            summary: "Not found.",
+            httpURLResponse: response
+        )
+        #expect(error.kind == .persistent)
+    }
+
+    @Test("LabradorError kind is .transient for URLError.timedOut")
+    func labradorTransientTimeout() {
+        let error = LabradorError(
+            summary: "Timed out.",
+            underlyingError: URLError(.timedOut)
+        )
+        #expect(error.kind == .transient)
+    }
+
+    @Test("LabradorError kind is .persistent for URLError.cannotFindHost")
+    func labradorPersistentBadHost() {
+        let error = LabradorError(
+            summary: "Bad host.",
+            underlyingError: URLError(.cannotFindHost)
+        )
+        #expect(error.kind == .persistent)
+    }
+
+    @Test("JaysonError kind defaults to .persistent")
+    func jaysonKind() {
+        let error = JaysonError(process: .decode)
+        #expect(error.kind == .persistent)
+    }
+
+    @Test("CaseyError kind defaults to .persistent")
+    func caseyKind() {
+        let error = CaseyError()
+        #expect(error.kind == .persistent)
+    }
+}
+
 // MARK: - LocalizedError
 
 @Suite("Yikes - LocalizedError")
