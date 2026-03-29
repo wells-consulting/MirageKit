@@ -492,21 +492,24 @@ extension Labrador {
 
             self.payloadSummary = payload?.summary
 
-            var requestSummary = "[\(id)] -> \(method.rawValue) \(url.description)"
-
-            if let payloadTypeName = payload?.typeName {
-                requestSummary += " \(payloadTypeName)"
-            }
-
-            if let data = payload?.data {
-                requestSummary += ", \(data.count.formatted(.byteCount(style: .memory)))"
-            }
-
             if let logContext {
-                requestSummary += " (\(logContext))"
+                // Structured format: context leads, HTTP details follow
+                var requestSummary = "[\(id)] \(logContext)"
+                if let data = payload?.data {
+                    requestSummary += " | \(method.rawValue) \(data.count.formatted(.byteCount(style: .memory)))"
+                }
+                self.requestSummary = requestSummary
+            } else {
+                // Original format for non-context requests
+                var requestSummary = "[\(id)] -> \(method.rawValue) \(url.description)"
+                if let payloadTypeName = payload?.typeName {
+                    requestSummary += " \(payloadTypeName)"
+                }
+                if let data = payload?.data {
+                    requestSummary += ", \(data.count.formatted(.byteCount(style: .memory)))"
+                }
+                self.requestSummary = requestSummary
             }
-
-            self.requestSummary = requestSummary
         }
 
         init(
