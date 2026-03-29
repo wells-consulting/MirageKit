@@ -29,7 +29,7 @@ import Foundation
         /// Optional callback invoked for every log message.
         /// Set at app startup to forward log entries externally.
         public nonisolated(unsafe) static var sink: (
-            @Sendable (_ level: Level, _ message: String, _ file: StaticString, _ line: UInt) -> Void
+            @Sendable (_ level: Level, _ message: String, _ file: String, _ line: UInt) -> Void
         )?
 
         // MARK: - Level
@@ -76,7 +76,7 @@ import Foundation
 
         public func debug(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             logger.debug("\(message) [\(file):\(line)]")
@@ -85,7 +85,7 @@ import Foundation
 
         public func info(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             logger.info("\(message) [\(file):\(line)]")
@@ -94,7 +94,7 @@ import Foundation
 
         public func notice(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             logger.notice("\(message) [\(file):\(line)]")
@@ -103,7 +103,7 @@ import Foundation
 
         public func error(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             logger.error("\(message) [\(file):\(line)]")
@@ -112,7 +112,7 @@ import Foundation
 
         public func fault(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             logger.fault("\(message) [\(file):\(line)]")
@@ -124,7 +124,7 @@ import Foundation
         public func error(
             _ message: String,
             while task: String?,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -139,7 +139,7 @@ import Foundation
         public func error(
             _ error: any Error,
             while task: String? = nil,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -154,7 +154,7 @@ import Foundation
         public func fault(
             _ message: String,
             while task: String?,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -169,7 +169,7 @@ import Foundation
         public func fault(
             _ error: any Error,
             while task: String? = nil,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -189,7 +189,7 @@ import Foundation
         // MARK: - Sink
 
         public nonisolated(unsafe) static var sink: (
-            @Sendable (_ level: Level, _ message: String, _ file: StaticString, _ line: UInt) -> Void
+            @Sendable (_ level: Level, _ message: String, _ file: String, _ line: UInt) -> Void
         )?
 
         // MARK: - Level
@@ -243,7 +243,7 @@ import Foundation
 
         // MARK: - Internal helpers
 
-        private func emit(_ level: String, _ message: String, file: StaticString, line: UInt) {
+        private func emit(_ level: String, _ message: String, file: String, line: UInt) {
             print("\(subsystem).\(category) | \(level) \(message) [\(file):\(line)]")
         }
 
@@ -251,7 +251,7 @@ import Foundation
 
         public func debug(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             emit("DEBUG", message, file: file, line: line)
@@ -260,7 +260,7 @@ import Foundation
 
         public func info(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             emit("INFO", message, file: file, line: line)
@@ -269,7 +269,7 @@ import Foundation
 
         public func notice(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             emit("NOTICE", message, file: file, line: line)
@@ -278,7 +278,7 @@ import Foundation
 
         public func error(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             emit("ERROR", message, file: file, line: line)
@@ -287,7 +287,7 @@ import Foundation
 
         public func fault(
             _ message: String,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             emit("FAULT", message, file: file, line: line)
@@ -299,7 +299,7 @@ import Foundation
         public func error(
             _ message: String,
             while task: String?,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -314,7 +314,7 @@ import Foundation
         public func error(
             _ error: any Error,
             while task: String? = nil,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -329,7 +329,7 @@ import Foundation
         public func fault(
             _ message: String,
             while task: String?,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -344,7 +344,7 @@ import Foundation
         public func fault(
             _ error: any Error,
             while task: String? = nil,
-            file: StaticString = #fileID,
+            file: String = #fileID,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -494,7 +494,7 @@ public extension Timber {
         public func append(
             level: Timber.Level,
             message: String,
-            file: StaticString,
+            file: String,
             line: UInt,
         ) {
             appendEntry(level: level, message: message, file: file, line: line)
@@ -509,7 +509,7 @@ public extension Timber {
             generation: Int,
             level: Timber.Level,
             message: String,
-            file: StaticString,
+            file: String,
             line: UInt,
         ) {
             guard generation == self.generation.withLock({ $0 }) else { return }
@@ -528,7 +528,7 @@ public extension Timber {
         private func appendEntry(
             level: Timber.Level,
             message: String,
-            file: StaticString,
+            file: String,
             line: UInt,
         ) {
             let entry = TimberLogEntry(

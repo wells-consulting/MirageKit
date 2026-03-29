@@ -13,7 +13,7 @@ import Testing
 private final class SinkCapture: Sendable {
     nonisolated(unsafe) var level: Timber.Level?
     nonisolated(unsafe) var message: String?
-    nonisolated(unsafe) var file: StaticString?
+    nonisolated(unsafe) var file: String?
     nonisolated(unsafe) var line: UInt?
     nonisolated(unsafe) var called: Bool = false
 }
