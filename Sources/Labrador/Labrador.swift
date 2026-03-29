@@ -613,7 +613,7 @@ extension Labrador {
 
             var forceIncludeResponseBody = false
             if let statusCode {
-                parts.append("[\(requestID)] <- " + statusCode.description)
+                parts.append("[\(requestID)] <- \(statusCode.rawValue)")
                 forceIncludeResponseBody = !statusCode.isSuccess && statusCode != .notFound
             } else {
                 parts.append("[\(requestID)]")
