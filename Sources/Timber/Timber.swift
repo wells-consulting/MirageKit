@@ -79,7 +79,7 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.debug("\(message) [\(file):\(line)]")
+            logger.debug("\(message) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.debug, message, file, line)
         }
 
@@ -88,7 +88,7 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.info("\(message) [\(file):\(line)]")
+            logger.info("\(message) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.info, message, file, line)
         }
 
@@ -97,7 +97,7 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.notice("\(message) [\(file):\(line)]")
+            logger.notice("\(message) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.notice, message, file, line)
         }
 
@@ -106,7 +106,7 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.error("\(message) [\(file):\(line)]")
+            logger.error("\(message) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.error, message, file, line)
         }
 
@@ -115,7 +115,7 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.fault("\(message) [\(file):\(line)]")
+            logger.fault("\(message) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.fault, message, file, line)
         }
 
@@ -132,7 +132,7 @@ import Foundation
             } else {
                 message
             }
-            logger.error("\(formatted) [\(file):\(line)]")
+            logger.error("\(formatted) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.error, formatted, file, line)
         }
 
@@ -147,7 +147,7 @@ import Foundation
             } else {
                 "\(error)"
             }
-            logger.error("\(formatted) [\(file):\(line)]")
+            logger.error("\(formatted) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.error, formatted, file, line)
         }
 
@@ -162,7 +162,7 @@ import Foundation
             } else {
                 message
             }
-            logger.fault("\(formatted) [\(file):\(line)]")
+            logger.fault("\(formatted) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.fault, formatted, file, line)
         }
 
@@ -177,7 +177,7 @@ import Foundation
             } else {
                 "\(error)"
             }
-            logger.fault("\(formatted) [\(file):\(line)]")
+            logger.fault("\(formatted) [\(Self.shortFile(file)):\(line)]")
             Self.sink?(.fault, formatted, file, line)
         }
     }
@@ -244,7 +244,7 @@ import Foundation
         // MARK: - Internal helpers
 
         private func emit(_ level: String, _ message: String, file: String, line: UInt) {
-            print("\(subsystem).\(category) | \(level) \(message) [\(file):\(line)]")
+            print("\(subsystem).\(category) | \(level) \(message) [\(Self.shortFile(file)):\(line)]")
         }
 
         // MARK: - Logging
@@ -358,6 +358,23 @@ import Foundation
     }
 
 #endif
+
+// MARK: - Helpers
+
+private extension Timber {
+
+    /// `"MirageKit/Labrador.swift"` → `"Labrador"`.
+    static func shortFile(_ fileID: String) -> String {
+        var name = fileID
+        if let slash = name.lastIndex(of: "/") {
+            name = String(name[name.index(after: slash)...])
+        }
+        if let dot = name.lastIndex(of: ".") {
+            name = String(name[..<dot])
+        }
+        return name
+    }
+}
 
 // MARK: - Shared Instance
 
