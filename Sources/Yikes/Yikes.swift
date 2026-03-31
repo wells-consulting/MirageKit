@@ -115,6 +115,20 @@ public extension Yikes {
     }
 }
 
+// MARK: - Refcode
+
+public enum Refcode {
+
+    /// Derives a human-readable refcode from the call site.
+    /// e.g. `"Labrador.execute"` from `#fileID` and `#function`.
+    public static func derive(fileID: String = #fileID, caller: String = #function) -> String {
+        let file = String(fileID.split(separator: "/").last ?? Substring(fileID))
+        let domain = file.replacingOccurrences(of: ".swift", with: "")
+        let method = String(caller.split(separator: "(").first ?? Substring(caller))
+        return "\(domain).\(method)"
+    }
+}
+
 // MARK: - Helpers
 
 public enum DoesNotCompute {
