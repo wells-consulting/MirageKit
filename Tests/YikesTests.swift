@@ -466,3 +466,45 @@ struct DiagnosticsTests {
         #expect(diag?.contains("Not this") != true)
     }
 }
+
+// MARK: - Refcode
+
+@Suite("Refcode.derive")
+struct RefcodeTests {
+
+    @Test("Plain filename produces Domain.method")
+    func plainFile() {
+        let result = Refcode.derive(fileID: "App/Labrador.swift", caller: "execute()")
+        #expect(result == "Labrador.execute")
+    }
+
+    @Test("Extension file strips base-class prefix")
+    func extensionFileStripsPrefix() {
+        let result = Refcode.derive(fileID: "App/StashBackend+Scene.swift", caller: "fetchData()")
+        #expect(result == "Scene.fetchData")
+    }
+
+    @Test("Multiple plus signs: only suffix after last + is kept")
+    func multiplePlus() {
+        let result = Refcode.derive(fileID: "App/A+B+Scene.swift", caller: "load()")
+        #expect(result == "Scene.load")
+    }
+
+    @Test("No module prefix in fileID still works")
+    func noSlash() {
+        let result = Refcode.derive(fileID: "Labrador.swift", caller: "fetch()")
+        #expect(result == "Labrador.fetch")
+    }
+
+    @Test("caller with no parens uses full string")
+    func callerNoParens() {
+        let result = Refcode.derive(fileID: "App/Foo.swift", caller: "doWork")
+        #expect(result == "Foo.doWork")
+    }
+
+    @Test("Extension file with no module prefix strips prefix")
+    func extensionFileNoModule() {
+        let result = Refcode.derive(fileID: "AppViewModel+Settings.swift", caller: "save()")
+        #expect(result == "Settings.save")
+    }
+}

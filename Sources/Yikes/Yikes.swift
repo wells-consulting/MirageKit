@@ -120,10 +120,18 @@ public extension Yikes {
 public enum Refcode {
 
     /// Derives a human-readable refcode from the call site.
-    /// e.g. `"Labrador.execute"` from `#fileID` and `#function`.
+    /// e.g. `"Scene.fetchData"` from a `#fileID` of `"App/StashBackend+Scene.swift"`
+    /// and a `#function` of `"fetchData(_:)"`.
+    ///
+    /// The domain is the file's stem with the module prefix and any base-class
+    /// prefix (everything up to and including the last `+`) stripped, so that
+    /// `StashBackend+Scene` → `Scene` and `AppViewModel` → `AppViewModel`.
     public static func derive(fileID: String = #fileID, caller: String = #function) -> String {
         let file = String(fileID.split(separator: "/").last ?? Substring(fileID))
-        let domain = file.replacingOccurrences(of: ".swift", with: "")
+        var domain = file.replacingOccurrences(of: ".swift", with: "")
+        if let plus = domain.lastIndex(of: "+") {
+            domain = String(domain[domain.index(after: plus)...])
+        }
         let method = String(caller.split(separator: "(").first ?? Substring(caller))
         return "\(domain).\(method)"
     }

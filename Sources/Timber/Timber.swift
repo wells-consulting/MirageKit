@@ -361,9 +361,15 @@ import Foundation
 
 // MARK: - Helpers
 
-private extension Timber {
+extension Timber {
 
-    /// `"MirageKit/Labrador.swift"` → `"Labrador"`.
+    /// Reduces a `#fileID` string to the shortest useful label for log output.
+    ///
+    /// Steps applied in order:
+    /// 1. Strip the module prefix and slash — `"MirageKit/Labrador.swift"` → `"Labrador.swift"`
+    /// 2. Strip the file extension — `"Labrador.swift"` → `"Labrador"`
+    /// 3. Strip everything up to and including the last `+`, if present —
+    ///    `"StashBackend+Scene"` → `"Scene"`, `"AppViewModel"` → `"AppViewModel"`
     static func shortFile(_ fileID: String) -> String {
         var name = fileID
         if let slash = name.lastIndex(of: "/") {
@@ -371,6 +377,9 @@ private extension Timber {
         }
         if let dot = name.lastIndex(of: ".") {
             name = String(name[..<dot])
+        }
+        if let plus = name.lastIndex(of: "+") {
+            name = String(name[name.index(after: plus)...])
         }
         return name
     }
