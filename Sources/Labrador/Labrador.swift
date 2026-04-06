@@ -182,7 +182,7 @@ public actor Labrador {
             // Wait before retrying (not on the first attempt)
             if attempt > 0, let effectiveRetryPolicy {
                 let delay = effectiveRetryPolicy.backoff.delay(for: attempt - 1)
-                log.debug("[\(clientRequest.id)] Retry \(attempt)/\(effectiveRetryPolicy.maxRetries) after \(String(format: "%.1f", delay))s")
+                log.debug("#\(clientRequest.id) Retry \(attempt)/\(effectiveRetryPolicy.maxRetries) after \(String(format: "%.1f", delay))s")
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 try Task.checkCancellation()
             }
@@ -494,14 +494,14 @@ extension Labrador {
 
             if let logContext {
                 // Structured format: context leads, HTTP details follow
-                var requestSummary = "[\(id)] \(logContext)"
+                var requestSummary = "#\(id) \(logContext)"
                 if let data = payload?.data {
                     requestSummary += " | \(method.rawValue) \(data.count.formatted(.byteCount(style: .memory)))"
                 }
                 self.requestSummary = requestSummary
             } else {
                 // Original format for non-context requests
-                var requestSummary = "[\(id)] -> \(method.rawValue) \(url.description)"
+                var requestSummary = "#\(id) -> \(method.rawValue) \(url.description)"
                 if let payloadTypeName = payload?.typeName {
                     requestSummary += " \(payloadTypeName)"
                 }
@@ -525,7 +525,7 @@ extension Labrador {
             self.logOptions = logOptions
             self.payloadSummary = nil
 
-            var requestSummary = "[\(id)] ->"
+            var requestSummary = "#\(id) ->"
 
             if let method = urlRequest.httpMethod {
                 requestSummary += " \(method.uppercased())"
@@ -540,7 +540,7 @@ extension Labrador {
             }
 
             if let logContext {
-                requestSummary += " (\(logContext))"
+                requestSummary += " | \(logContext)"
             }
 
             self.requestSummary = requestSummary
@@ -613,10 +613,10 @@ extension Labrador {
 
             var forceIncludeResponseBody = false
             if let statusCode {
-                parts.append("[\(requestID)] <- \(statusCode.rawValue)")
+                parts.append("#\(requestID) <- \(statusCode.rawValue)")
                 forceIncludeResponseBody = !statusCode.isSuccess && statusCode != .notFound
             } else {
-                parts.append("[\(requestID)]")
+                parts.append("#\(requestID)")
             }
 
             if let data {
@@ -634,11 +634,11 @@ extension Labrador {
                 }
             }
 
-            if let logContext {
-                parts.append("(\(logContext))")
-            }
-
             var description = parts.joined(separator: ", ")
+
+            if let logContext {
+                description += " | \(logContext)"
+            }
 
             if let responseDescription {
                 description.append(responseDescription)
