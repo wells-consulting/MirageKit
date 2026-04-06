@@ -31,7 +31,7 @@ public extension Date {
     static func durationString(from startDate: Date, to endDate: Date) -> String {
         let elapsedTime = TimeInterval(endDate.timeIntervalSince(startDate))
         if elapsedTime < 1.0 {
-            return String(format: "%d ms", Int(ceil(elapsedTime * 1000.0)))
+            return String(format: "%dms", Int(ceil(elapsedTime * 1000.0)))
         } else {
             return String(format: "%1.2f s", elapsedTime)
         }

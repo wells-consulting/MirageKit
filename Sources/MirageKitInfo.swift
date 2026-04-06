@@ -4,5 +4,5 @@
 //
 
 public enum MirageKitInfo {
-    public static let version = "0.10.2"
+    public static let version = "0.10.3"
 }
