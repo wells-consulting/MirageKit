@@ -23,6 +23,7 @@ public struct LabradorError: Yikes {
     public let urlRequest: URLRequest?
     public let httpURLResponse: HTTPURLResponse?
     public let responseData: Data?
+    public let responseBody: String?
     public let timing: Range<Date>?
     public var statusCode: Labrador.StatusCode? {
         if let statusCodeRawValue = httpURLResponse?.statusCode {
@@ -78,6 +79,7 @@ public struct LabradorError: Yikes {
         urlRequest: URLRequest? = nil,
         httpURLResponse: HTTPURLResponse? = nil,
         responseData: Data? = nil,
+        responseBody: String? = nil,
         timing: Range<Date>? = nil,
         refcode: String? = nil,
     ) {
@@ -86,7 +88,14 @@ public struct LabradorError: Yikes {
 
         self.refcode = refcode
         self.summary = summary
-        self.details = details
+
+        let truncatedBody = responseBody.map { String($0.prefix(2000)) }
+        self.responseBody = truncatedBody
+        if let truncatedBody, !truncatedBody.isEmpty {
+            self.details = details.map { $0 + "\n" + truncatedBody } ?? truncatedBody
+        } else {
+            self.details = details
+        }
 
         self.underlyingError = underlyingError
         self.userInfo = userInfo
@@ -106,6 +115,7 @@ public struct LabradorError: Yikes {
         clientRequest: Labrador.ClientRequest,
         httpURLResponse: HTTPURLResponse? = nil,
         responseData: Data? = nil,
+        responseBody: String? = nil,
         timing: Range<Date>? = nil,
         refcode: String? = nil,
     ) {
@@ -113,7 +123,14 @@ public struct LabradorError: Yikes {
         self.refcode = refcode
         self.title = title ?? "HTTP Error"
         self.summary = summary
-        self.details = details
+
+        let truncatedBody = responseBody.map { String($0.prefix(2000)) }
+        self.responseBody = truncatedBody
+        if let truncatedBody, !truncatedBody.isEmpty {
+            self.details = details.map { $0 + "\n" + truncatedBody } ?? truncatedBody
+        } else {
+            self.details = details
+        }
 
         self.underlyingError = underlyingError
         self.userInfo = userInfo

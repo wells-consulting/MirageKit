@@ -269,12 +269,15 @@ public actor Labrador {
         // Failure is not an option
 
         guard statusCode.isSuccess else {
+            let bodyText = String(data: data, encoding: .utf8).map { String($0.prefix(2000)) }
+            log.error("\(statusCode.description): \(bodyText ?? "(no body)")")
             throw LabradorError(
                 summary: Self.userFacingSummary(for: statusCode),
                 details: statusCode.description,
                 clientRequest: clientRequest,
                 httpURLResponse: httpURLResponse,
                 responseData: data,
+                responseBody: bodyText,
             )
         }
 
