@@ -10,12 +10,12 @@ import Testing
 // MARK: - Test Helpers
 
 /// Minimal conformer that only provides the required `summary`.
-private struct MinimalError: Yikes {
+private struct MinimalError: MirageKitError {
     let summary: String
 }
 
 /// Full conformer that provides all optional properties.
-private struct FullError: Yikes {
+private struct FullError: MirageKitError {
     let summary: String
     let title: String?
     let details: String?
@@ -31,8 +31,8 @@ private struct PlainError: Error, CustomStringConvertible {
 
 // MARK: - Protocol Defaults
 
-@Suite("Yikes - Protocol Defaults")
-struct YikesDefaultsTests {
+@Suite("MirageKitError - Protocol Defaults")
+struct MirageKitErrorDefaultsTests {
 
     @Test("summary is the only required property")
     func summaryRequired() {
@@ -73,8 +73,8 @@ struct YikesDefaultsTests {
 
 // MARK: - ErrorKind
 
-@Suite("Yikes - ErrorKind")
-struct YikesErrorKindTests {
+@Suite("MirageKitError - ErrorKind")
+struct MirageKitErrorKindTests {
 
     @Test("kind defaults to .persistent")
     func kindDefault() {
@@ -166,8 +166,8 @@ struct YikesErrorKindTests {
 
 // MARK: - LocalizedError
 
-@Suite("Yikes - LocalizedError")
-struct YikesLocalizedTests {
+@Suite("MirageKitError - LocalizedError")
+struct MirageKitErrorLocalizedTests {
 
     @Test("errorDescription is summary when no details")
     func errorDescriptionSummaryOnly() {
@@ -197,8 +197,8 @@ struct YikesLocalizedTests {
 
 // MARK: - Full Conformer
 
-@Suite("Yikes - Full Conformer")
-struct YikesFullConformerTests {
+@Suite("MirageKitError - Full Conformer")
+struct MirageKitErrorFullConformerTests {
 
     @Test("All properties are accessible")
     func allProperties() {
@@ -252,17 +252,17 @@ struct ErrorDescriptionOptionsTests {
 
 // MARK: - describe() — Root-level behavior
 
-@Suite("YikesUtils.describe - Root Level")
+@Suite("DoesNotCompute.describe - Root Level")
 struct DescribeRootTests {
 
-    @Test("Root Yikes includes summary")
+    @Test("Root includes summary")
     func rootSummary() {
         let error = MinimalError(summary: "Request failed")
         let result = DoesNotCompute.describe(error, options: .minimal)
         #expect(result.contains("Request failed"))
     }
 
-    @Test("Root Yikes includes details with .basic")
+    @Test("Root includes details with .basic")
     func rootDetails() {
         let error = FullError(
             summary: "Fail",
@@ -277,7 +277,7 @@ struct DescribeRootTests {
         #expect(result.contains("Timeout after 30s"))
     }
 
-    @Test("Root Yikes excludes details with .minimal")
+    @Test("Root excludes details with .minimal")
     func rootNoDetails() {
         let error = FullError(
             summary: "Fail",
@@ -300,7 +300,7 @@ struct DescribeRootTests {
 
     @Test("Root error with no underlying returns non-empty string")
     func rootNonEmpty() {
-        let error = MinimalError(summary: "Something")
+        let error = MinimalError(summary: "Some")
         let result = DoesNotCompute.describe(error, options: .verbose)
         #expect(!result.isEmpty)
     }
@@ -308,10 +308,10 @@ struct DescribeRootTests {
 
 // MARK: - describe() — Underlying errors
 
-@Suite("YikesUtils.describe - Underlying Errors")
+@Suite("DoesNotCompute.describe - Underlying Errors")
 struct DescribeUnderlyingTests {
 
-    @Test("Underlying Yikes is described")
+    @Test("Underlying is described")
     func underlyingYikes() {
         let inner = MinimalError(summary: "Inner problem")
         let outer = FullError(
@@ -403,7 +403,7 @@ struct DescribeUnderlyingTests {
 
 // MARK: - describe() — NSError
 
-@Suite("YikesUtils.describe - NSError")
+@Suite("DoesNotCompute.describe - NSError")
 struct DescribeNSErrorTests {
 
     @Test("NSError info included with .nsError option")
@@ -433,7 +433,7 @@ struct DescribeNSErrorTests {
 
 // MARK: - diagnostics() convenience
 
-@Suite("Yikes - diagnostics()")
+@Suite("MirageKitError - diagnostics()")
 struct DiagnosticsTests {
 
     @Test("diagnostics returns describe output")
@@ -480,13 +480,13 @@ struct RefcodeTests {
 
     @Test("Extension file strips base-class prefix")
     func extensionFileStripsPrefix() {
-        let result = Refcode.derive(fileID: "App/StashBackend+Scene.swift", caller: "fetchData()")
+        let result = Refcode.derive(fileID: "SomeApp/Some+Scene.swift", caller: "fetchData()")
         #expect(result == "Scene.fetchData")
     }
 
     @Test("Multiple plus signs: only suffix after last + is kept")
     func multiplePlus() {
-        let result = Refcode.derive(fileID: "App/A+B+Scene.swift", caller: "load()")
+        let result = Refcode.derive(fileID: "SomeApp/A+B+Scene.swift", caller: "load()")
         #expect(result == "Scene.load")
     }
 
@@ -496,15 +496,15 @@ struct RefcodeTests {
         #expect(result == "Labrador.fetch")
     }
 
-    @Test("caller with no parens uses full string")
+    @Test("Caller with no parens uses full string")
     func callerNoParens() {
-        let result = Refcode.derive(fileID: "App/Foo.swift", caller: "doWork")
+        let result = Refcode.derive(fileID: "SomeApp/Foo.swift", caller: "doWork")
         #expect(result == "Foo.doWork")
     }
 
     @Test("Extension file with no module prefix strips prefix")
     func extensionFileNoModule() {
-        let result = Refcode.derive(fileID: "AppViewModel+Settings.swift", caller: "save()")
+        let result = Refcode.derive(fileID: "SomeViewModel+Settings.swift", caller: "save()")
         #expect(result == "Settings.save")
     }
 }

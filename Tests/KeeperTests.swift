@@ -71,7 +71,7 @@ struct KeychainErrorTests {
 
     @Test("conforms to Yikes")
     func YikesConformance() {
-        let error: any Yikes = KeeperError.itemNotFound(key: "test")
+        let error: any MirageKitError = KeeperError.itemNotFound(key: "test")
         #expect(error.details?.contains("test") == true)
         #expect(error.title == "Keychain Error")
     }

@@ -474,17 +474,17 @@ struct TimberShortFileTests {
 
     @Test("Strips base-class prefix when + is present")
     func stripsBaseClassPrefix() {
-        #expect(Timber.shortFile("MiragePlayer/StashBackend+Scene.swift") == "Scene")
-        #expect(Timber.shortFile("MiragePlayer/StashBackend+GraphQL.swift") == "GraphQL")
-        #expect(Timber.shortFile("MiragePlayer/StashBackend+ServerInfo.swift") == "ServerInfo")
-        #expect(Timber.shortFile("App/AppViewModel+Settings.swift") == "Settings")
-        #expect(Timber.shortFile("App/DLNABackend+Adapter.swift") == "Adapter")
+        #expect(Timber.shortFile("SomeApp/Some+Scene.swift") == "Scene")
+        #expect(Timber.shortFile("SomeApp/Some+GraphQL.swift") == "GraphQL")
+        #expect(Timber.shortFile("SomeApp/Some+ServerInfo.swift") == "ServerInfo")
+        #expect(Timber.shortFile("SomeApp/Some+Settings.swift") == "Settings")
+        #expect(Timber.shortFile("SomeApp/Some+Adapter.swift") == "Adapter")
     }
 
     @Test("Leaves names without + unchanged")
     func noPlus() {
-        #expect(Timber.shortFile("App/AppViewModel.swift") == "AppViewModel")
-        #expect(Timber.shortFile("App/MiragePlayerApp.swift") == "MiragePlayerApp")
+        #expect(Timber.shortFile("SomeApp/SomeViewModel.swift") == "SomeViewModel")
+        #expect(Timber.shortFile("SomeApp/SomeApp.swift") == "SomeApp")
     }
 
     @Test("Works when fileID has no slash")

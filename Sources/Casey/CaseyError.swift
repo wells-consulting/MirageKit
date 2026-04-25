@@ -5,7 +5,7 @@
 
 import Foundation
 
-public struct CaseyError: Yikes {
+public struct CaseyError: MirageKitError {
 
     // MARK: - Properties
 

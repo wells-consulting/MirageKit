@@ -5,11 +5,12 @@
 
 import Foundation
 
-/// Core String extensions
+/// Utility extensions for `String` and `Optional<String>`.
 public extension String {
 
     // MARK: - Properties
 
+    /// `true` if the string is empty or contains only whitespace and newlines.
     var isBlank: Bool {
         trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -21,9 +22,11 @@ public extension String {
 
     // MARK: - Truncation
 
+    /// Where to cut characters when a string exceeds the maximum length.
     enum TruncationPosition { case leading, middle, trailing }
 
-    /// Truncates a string to a specified length
+    /// Returns the string truncated to `length` characters, inserting `"…"` at
+    /// the specified position if truncation occurs.
     func truncating(to length: Int, position: TruncationPosition) -> String {
         guard count > length else { return self }
 
@@ -116,6 +119,7 @@ public extension String {
 
     // MARK: - Comparisons
 
+    /// Returns `true` if `lhs` and `rhs` compare as equal under locale-aware rules.
     static func isOrderedSame(
         _ lhs: String,
         _ rhs: String,
@@ -128,6 +132,7 @@ public extension String {
         }
     }
 
+    /// Returns `true` if `lhs` sorts after `rhs` under locale-aware rules.
     static func isOrderedDescending(
         _ lhs: String,
         _ rhs: String,
@@ -140,6 +145,7 @@ public extension String {
         }
     }
 
+    /// Returns `true` if `lhs` sorts before `rhs` under locale-aware rules.
     static func isOrderedAscending(
         _ lhs: String,
         _ rhs: String,
@@ -167,6 +173,7 @@ public extension String? {
 
 public extension Collection {
 
+    /// `true` if the collection contains at least one element. The inverse of `isEmpty`.
     var isNotEmpty: Bool { !isEmpty }
 }
 

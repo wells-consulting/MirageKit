@@ -9,6 +9,18 @@ import Foundation
     import FoundationNetworking
 #endif
 
+/// An async HTTP client built on `URLSession`.
+///
+/// `Labrador` handles request/response logging, retry logic, interceptors,
+/// and TLS trust policy. All public API is `async` and honours cooperative
+/// cancellation. Configure the client once at creation time via
+/// ``Configuration``, then call the typed helpers declared in the
+/// `Labrador+GET.swift`, `Labrador+POST.swift`, and related files.
+///
+/// ```swift
+/// let client = Labrador(configuration: .init(baseURL: serverURL))
+/// let scenes: [Scene] = try await client.get(path: "scenes")
+/// ```
 public actor Labrador {
 
     let urlSession: URLSession
@@ -30,6 +42,10 @@ public actor Labrador {
 
     // MARK: - Initializer
 
+    /// Creates a new `Labrador` instance with the given configuration.
+    /// - Parameter configuration: Client-wide settings including base URL, headers,
+    ///   auth token, caching, retry policy, and logging options.
+    ///   Defaults to ``Configuration/init()`` when omitted.
     public init(configuration: Configuration = .init()) {
 
         if let urlSession = configuration.urlSession {
@@ -182,8 +198,8 @@ public actor Labrador {
             // Wait before retrying (not on the first attempt)
             if attempt > 0, let effectiveRetryPolicy {
                 let delay = effectiveRetryPolicy.backoff.delay(for: attempt - 1)
-                log.debug("#\(clientRequest.id) Retry \(attempt)/\(effectiveRetryPolicy.maxRetries) after \(String(format: "%.1f", delay))s")
-                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                log.notice("Retrying request (attempt \(attempt + 1) of \(maxAttempts)) after \(String(format: "%.0f", delay))s delay: \(urlRequest.url?.absoluteString ?? "unknown")")
+                try await Task.sleep(for: .seconds(delay))
                 try Task.checkCancellation()
             }
 

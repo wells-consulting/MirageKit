@@ -23,7 +23,7 @@ public enum ErrorKind: String, Sendable {
 
 /// Common protocol for errors thrown by MirageKit modules.
 
-public protocol Yikes: Error, LocalizedError, CustomStringConvertible, Sendable {
+public protocol MirageKitError: Error, LocalizedError, CustomStringConvertible, Sendable {
 
     //
     // #!/usr/bin/env bash
@@ -78,7 +78,7 @@ public protocol Yikes: Error, LocalizedError, CustomStringConvertible, Sendable 
 
 // MARK: - Default Implementations
 
-public extension Yikes {
+public extension MirageKitError {
 
     /// Concise human-readable description for string interpolation.
     var description: String {
@@ -120,12 +120,12 @@ public extension Yikes {
 public enum Refcode {
 
     /// Derives a human-readable refcode from the call site.
-    /// e.g. `"Scene.fetchData"` from a `#fileID` of `"App/StashBackend+Scene.swift"`
+    /// e.g. `"Scene.fetchData"` from a `#fileID` of `"App/Some+Scene.swift"`
     /// and a `#function` of `"fetchData(_:)"`.
     ///
     /// The domain is the file's stem with the module prefix and any base-class
     /// prefix (everything up to and including the last `+`) stripped, so that
-    /// `StashBackend+Scene` → `Scene` and `AppViewModel` → `AppViewModel`.
+    /// `Some+Scene` → `Scene` and `SomeViewModel` → `SomeViewModel`.
     public static func derive(fileID: String = #fileID, caller: String = #function) -> String {
         let file = String(fileID.split(separator: "/").last ?? Substring(fileID))
         var domain = file.replacingOccurrences(of: ".swift", with: "")
@@ -176,7 +176,7 @@ public enum DoesNotCompute {
 
         let indent = String(repeating: "    ", count: depth)
 
-        if let oops = error as? (any Yikes) {
+        if let oops = error as? (any MirageKitError) {
             if depth > 0 {
                 lines.append("Underlying Error (\(type(of: error)))")
             }
@@ -207,7 +207,7 @@ public enum DoesNotCompute {
         }
 
         if options.contains(.underlyingError),
-           let underlying = (error as? (any Yikes))?.underlyingError
+           let underlying = (error as? (any MirageKitError))?.underlyingError
         {
             lines.append(
                 "\n" + Self.describe(underlying, options: options, depth: depth + 1),

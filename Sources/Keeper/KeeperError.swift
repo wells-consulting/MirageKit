@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct KeeperError: Yikes {
+public struct KeeperError: MirageKitError {
 
     // MARK: - Properties
 

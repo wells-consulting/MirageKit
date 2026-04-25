@@ -26,7 +26,7 @@ public struct Keeper: Sendable {
         service: String? = nil,
         accessGroup: String? = nil,
     ) {
-        self.service = service ?? Bundle.appBundleIdentifier ?? #fileID
+        self.service = service ?? Bundle.appBundleIdentifier
         self.accessGroup = accessGroup
     }
 

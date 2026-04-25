@@ -62,18 +62,26 @@ import Foundation
 
         // MARK: - Initializers
 
+        /// Creates a logger scoped to the given subsystem and category.
+        /// - Parameters:
+        ///   - subsystem: Reverse-DNS bundle identifier for the subsystem
+        ///     (e.g. `"com.example.MyApp"`). Defaults to `"MirageKit"`.
+        ///   - category: A label that groups related messages within the subsystem.
+        ///     Defaults to `"Core"`.
         public init(subsystem: String? = nil, category: String? = nil) {
             let subsystem = subsystem ?? "MirageKit"
             let category: String = category ?? "Core"
             self.logger = os.Logger(subsystem: subsystem, category: category)
         }
 
+        /// Creates a logger scoped to the given subsystem and category.
         public init(subsystem: String, category: String) {
             self.logger = os.Logger(subsystem: subsystem, category: category)
         }
 
         // MARK: - Logging
 
+        /// Logs a message at the **debug** level.
         public func debug(
             _ message: String,
             file: String = #fileID,
@@ -83,6 +91,7 @@ import Foundation
             Self.sink?(.debug, message, file, line)
         }
 
+        /// Logs a message at the **info** level.
         public func info(
             _ message: String,
             file: String = #fileID,
@@ -92,6 +101,7 @@ import Foundation
             Self.sink?(.info, message, file, line)
         }
 
+        /// Logs a message at the **notice** level.
         public func notice(
             _ message: String,
             file: String = #fileID,
@@ -101,6 +111,7 @@ import Foundation
             Self.sink?(.notice, message, file, line)
         }
 
+        /// Logs a message at the **error** level.
         public func error(
             _ message: String,
             file: String = #fileID,
@@ -110,6 +121,7 @@ import Foundation
             Self.sink?(.error, message, file, line)
         }
 
+        /// Logs a message at the **fault** level.
         public func fault(
             _ message: String,
             file: String = #fileID,
@@ -121,6 +133,11 @@ import Foundation
 
         // MARK: - Convenience
 
+        /// Logs a task-failure message at the **error** level.
+        ///
+        /// When `task` is non-nil the message is formatted as
+        /// `"\(task) failed with error: \(message)"`; otherwise `message` is
+        /// passed through unchanged.
         public func error(
             _ message: String,
             while task: String?,
@@ -136,6 +153,7 @@ import Foundation
             Self.sink?(.error, formatted, file, line)
         }
 
+        /// Logs an `Error` value at the **error** level, optionally prefixed with a task name.
         public func error(
             _ error: any Error,
             while task: String? = nil,
@@ -151,6 +169,11 @@ import Foundation
             Self.sink?(.error, formatted, file, line)
         }
 
+        /// Logs a task-failure message at the **fault** level.
+        ///
+        /// When `task` is non-nil the message is formatted as
+        /// `"\(task) failed with error: \(message)"`; otherwise `message` is
+        /// passed through unchanged.
         public func fault(
             _ message: String,
             while task: String?,
@@ -166,6 +189,7 @@ import Foundation
             Self.sink?(.fault, formatted, file, line)
         }
 
+        /// Logs an `Error` value at the **fault** level, optionally prefixed with a task name.
         public func fault(
             _ error: any Error,
             while task: String? = nil,
@@ -223,6 +247,12 @@ import Foundation
 
         // MARK: - Initializers
 
+        /// Creates a logger scoped to the given subsystem and category.
+        /// - Parameters:
+        ///   - subsystem: Reverse-DNS bundle identifier for the subsystem.
+        ///     Falls back to the app name, bundle identifier, or `"MirageKit"`.
+        ///   - category: A label that groups related messages within the subsystem.
+        ///     Defaults to `"Core"`.
         public init(subsystem: String? = nil, category: String? = nil) {
             self.subsystem = if let subsystem {
                 subsystem
@@ -236,6 +266,7 @@ import Foundation
             self.category = category ?? "Core"
         }
 
+        /// Creates a logger scoped to the given subsystem and category.
         public init(subsystem: String, category: String) {
             self.subsystem = subsystem
             self.category = category
@@ -249,6 +280,7 @@ import Foundation
 
         // MARK: - Logging
 
+        /// Logs a message at the **debug** level.
         public func debug(
             _ message: String,
             file: String = #fileID,
@@ -258,6 +290,7 @@ import Foundation
             Self.sink?(.debug, message, file, line)
         }
 
+        /// Logs a message at the **info** level.
         public func info(
             _ message: String,
             file: String = #fileID,
@@ -267,6 +300,7 @@ import Foundation
             Self.sink?(.info, message, file, line)
         }
 
+        /// Logs a message at the **notice** level.
         public func notice(
             _ message: String,
             file: String = #fileID,
@@ -276,6 +310,7 @@ import Foundation
             Self.sink?(.notice, message, file, line)
         }
 
+        /// Logs a message at the **error** level.
         public func error(
             _ message: String,
             file: String = #fileID,
@@ -285,6 +320,7 @@ import Foundation
             Self.sink?(.error, message, file, line)
         }
 
+        /// Logs a message at the **fault** level.
         public func fault(
             _ message: String,
             file: String = #fileID,
@@ -296,6 +332,11 @@ import Foundation
 
         // MARK: - Convenience
 
+        /// Logs a task-failure message at the **error** level.
+        ///
+        /// When `task` is non-nil the message is formatted as
+        /// `"\(task) failed with error: \(message)"`; otherwise `message` is
+        /// passed through unchanged.
         public func error(
             _ message: String,
             while task: String?,
@@ -311,6 +352,7 @@ import Foundation
             Self.sink?(.error, formatted, file, line)
         }
 
+        /// Logs an `Error` value at the **error** level, optionally prefixed with a task name.
         public func error(
             _ error: any Error,
             while task: String? = nil,
@@ -326,6 +368,11 @@ import Foundation
             Self.sink?(.error, formatted, file, line)
         }
 
+        /// Logs a task-failure message at the **fault** level.
+        ///
+        /// When `task` is non-nil the message is formatted as
+        /// `"\(task) failed with error: \(message)"`; otherwise `message` is
+        /// passed through unchanged.
         public func fault(
             _ message: String,
             while task: String?,
@@ -341,6 +388,7 @@ import Foundation
             Self.sink?(.fault, formatted, file, line)
         }
 
+        /// Logs an `Error` value at the **fault** level, optionally prefixed with a task name.
         public func fault(
             _ error: any Error,
             while task: String? = nil,
@@ -369,7 +417,7 @@ extension Timber {
     /// 1. Strip the module prefix and slash — `"MirageKit/Labrador.swift"` → `"Labrador.swift"`
     /// 2. Strip the file extension — `"Labrador.swift"` → `"Labrador"`
     /// 3. Strip everything up to and including the last `+`, if present —
-    ///    `"StashBackend+Scene"` → `"Scene"`, `"AppViewModel"` → `"AppViewModel"`
+    ///    `"Some+Scene"` → `"Scene"`, `"SmeViewModel"` → `"SomeViewModel"`
     static func shortFile(_ fileID: String) -> String {
         var name = fileID
         if let slash = name.lastIndex(of: "/") {

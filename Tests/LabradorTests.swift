@@ -279,3 +279,211 @@ struct RequestOptionsTests {
         #expect(options.retryPolicy?.maxRetries == 1)
     }
 }
+
+// MARK: - RetryPolicy Unit Tests
+
+@Suite("RetryPolicy")
+struct LabradorRetryPolicyUnitTests {
+
+    @Test("Preset .none has maxRetries 0")
+    func nonePreset() {
+        #expect(Labrador.RetryPolicy.none.maxRetries == 0)
+    }
+
+    @Test("Preset .standard has maxRetries 2")
+    func standardPreset() {
+        #expect(Labrador.RetryPolicy.standard.maxRetries == 2)
+    }
+
+    @Test("Preset .aggressive has maxRetries 4")
+    func aggressivePreset() {
+        #expect(Labrador.RetryPolicy.aggressive.maxRetries == 4)
+    }
+
+    @Test("Backoff.fixed returns sequential delays, clamping at last")
+    func fixedBackoffDelays() {
+        let backoff = Labrador.RetryPolicy.Backoff.fixed([1.0, 5.0])
+        #expect(backoff.delay(for: 0) == 1.0)
+        #expect(backoff.delay(for: 1) == 5.0)
+        #expect(backoff.delay(for: 2) == 5.0) // last element reused
+        #expect(backoff.delay(for: 99) == 5.0)
+    }
+
+    @Test("Backoff.fixed with empty array returns zero")
+    func fixedBackoffEmpty() {
+        let backoff = Labrador.RetryPolicy.Backoff.fixed([])
+        #expect(backoff.delay(for: 0) == 0.0)
+    }
+
+    @Test("defaultRetryURLErrors includes cannotConnectToHost and cannotFindHost")
+    func defaultURLErrors() {
+        let errors = Labrador.RetryPolicy.defaultRetryURLErrors
+        #expect(errors.contains(.cannotConnectToHost))
+        #expect(errors.contains(.cannotFindHost))
+        #expect(errors.contains(.timedOut))
+        #expect(errors.contains(.networkConnectionLost))
+        #expect(errors.contains(.notConnectedToInternet))
+    }
+}
+
+// MARK: - Retry Integration Tests
+
+/// URLProtocol that serves a pre-configured sequence of responses.
+/// Uses a lock for thread safety since URLSession calls it off the main thread.
+private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
+
+    typealias Handler = () throws -> (statusCode: Int, data: Data)
+
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var _handlers: [Handler] = []
+    nonisolated(unsafe) private static var _callCount: Int = 0
+
+    static var callCount: Int { lock.withLock { _callCount } }
+
+    static func setUp(handlers: [Handler]) {
+        lock.withLock {
+            _handlers = handlers
+            _callCount = 0
+        }
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        let handler: Handler? = Self.lock.withLock {
+            let i = Self._callCount
+            Self._callCount += 1
+            return i < Self._handlers.count ? Self._handlers[i] : nil
+        }
+
+        guard let handler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.unknown))
+            return
+        }
+
+        do {
+            let (statusCode, data) = try handler()
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: statusCode,
+                httpVersion: "HTTP/1.1",
+                headerFields: nil,
+            )!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {}
+}
+
+private func makeMockSession() -> URLSession {
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [MockURLProtocol.self]
+    return URLSession(configuration: config)
+}
+
+private let mockURL = URL(string: "https://test.mirage.internal/api")!
+
+// Serialized because MockURLProtocol uses shared static state.
+@Suite("Labrador Retry Behavior", .serialized)
+struct LabradorRetryTests {
+
+    @Test("Standard policy retries on transient URLError and eventually succeeds")
+    func retriesOnTransientErrorAndSucceeds() async throws {
+        MockURLProtocol.setUp(handlers: [
+            { throw URLError(.timedOut) },        // attempt 1: fail
+            { throw URLError(.timedOut) },        // attempt 2: fail
+            { (200, Data("ok".utf8)) },           // attempt 3: succeed
+        ])
+
+        let policy = Labrador.RetryPolicy(maxRetries: 2, backoff: .constant(0))
+        let client = Labrador(configuration: .init(urlSession: makeMockSession(), retryPolicy: policy))
+
+        var urlRequest = URLRequest(url: mockURL)
+        urlRequest.httpMethod = "GET"
+        let (_, response) = try await client.data(from: urlRequest)
+
+        #expect(response.statusCode == 200)
+        #expect(MockURLProtocol.callCount == 3)
+    }
+
+    @Test("No retry policy does not retry on failure")
+    func noRetryPolicyDoesNotRetry() async throws {
+        MockURLProtocol.setUp(handlers: [
+            { throw URLError(.timedOut) },
+            { (200, Data("ok".utf8)) },
+        ])
+
+        let client = Labrador(configuration: .init(urlSession: makeMockSession(), retryPolicy: nil))
+
+        var urlRequest = URLRequest(url: mockURL)
+        urlRequest.httpMethod = "GET"
+
+        await #expect(throws: (any Error).self) {
+            try await client.data(from: urlRequest)
+        }
+        #expect(MockURLProtocol.callCount == 1)
+    }
+
+    @Test("Retries on retryable HTTP status code")
+    func retriesOnRetryableStatusCode() async throws {
+        MockURLProtocol.setUp(handlers: [
+            { (503, Data()) },                    // attempt 1: Service Unavailable
+            { (200, Data("ok".utf8)) },           // attempt 2: succeed
+        ])
+
+        let policy = Labrador.RetryPolicy(maxRetries: 1, backoff: .constant(0))
+        let client = Labrador(configuration: .init(urlSession: makeMockSession(), retryPolicy: policy))
+
+        var urlRequest = URLRequest(url: mockURL)
+        urlRequest.httpMethod = "GET"
+        let (_, response) = try await client.data(from: urlRequest)
+
+        #expect(response.statusCode == 200)
+        #expect(MockURLProtocol.callCount == 2)
+    }
+
+    @Test("Retries exhausted throws error")
+    func retriesExhaustedThrowsError() async throws {
+        MockURLProtocol.setUp(handlers: [
+            { throw URLError(.timedOut) },
+            { throw URLError(.timedOut) },
+            { throw URLError(.timedOut) },
+        ])
+
+        let policy = Labrador.RetryPolicy(maxRetries: 2, backoff: .constant(0))
+        let client = Labrador(configuration: .init(urlSession: makeMockSession(), retryPolicy: policy))
+
+        var urlRequest = URLRequest(url: mockURL)
+        urlRequest.httpMethod = "GET"
+
+        await #expect(throws: (any Error).self) {
+            try await client.data(from: urlRequest)
+        }
+        #expect(MockURLProtocol.callCount == 3)
+    }
+
+    @Test("skipRetry option bypasses client retry policy")
+    func skipRetryBypassesPolicy() async throws {
+        MockURLProtocol.setUp(handlers: [
+            { throw URLError(.timedOut) },
+            { (200, Data("ok".utf8)) },
+        ])
+
+        let policy = Labrador.RetryPolicy(maxRetries: 2, backoff: .constant(0))
+        let client = Labrador(configuration: .init(urlSession: makeMockSession(), retryPolicy: policy))
+
+        var urlRequest = URLRequest(url: mockURL)
+        urlRequest.httpMethod = "GET"
+
+        await #expect(throws: (any Error).self) {
+            try await client.data(from: urlRequest, options: .init(skipRetry: true))
+        }
+        #expect(MockURLProtocol.callCount == 1)
+    }
+}

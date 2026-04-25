@@ -5,7 +5,7 @@
 
 import Foundation
 
-public struct LabradorError: Yikes {
+public struct LabradorError: MirageKitError {
 
     // MARK: - Properties
 
@@ -143,7 +143,7 @@ public struct LabradorError: Yikes {
 
     // MARK: Factory Methods
 
-    public static func noURL() -> any Yikes {
+    public static func noURL() -> any MirageKitError {
         LabradorError(
             summary: "Request has no URL.",
         )

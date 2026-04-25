@@ -5,7 +5,7 @@
 
 import Foundation
 
-public struct JaysonError: Yikes {
+public struct JaysonError: MirageKitError {
 
     public enum Process: Sendable {
         case encode

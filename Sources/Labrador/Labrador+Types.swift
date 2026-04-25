@@ -13,6 +13,7 @@ import Foundation
 
 public extension Labrador {
 
+    /// Controls which parts of each HTTP exchange Labrador writes to the log.
     struct LogOptions: OptionSet, Sendable {
 
         public let rawValue: Int
@@ -21,11 +22,16 @@ public extension Labrador {
             self.rawValue = rawValue
         }
 
+        /// Log the outgoing request line (method, URL, size).
         public static let request = LogOptions(rawValue: 1 << 1)
+        /// Log the serialized request body alongside the request line.
         public static let requestBody = LogOptions(rawValue: 1 << 2)
+        /// Log the incoming response line (status code, size, duration).
         public static let response = LogOptions(rawValue: 1 << 3)
+        /// Log the raw response body alongside the response line.
         public static let responseBody = LogOptions(rawValue: 1 << 4)
 
+        /// Convenience preset that enables all four log options.
         public static let logAll: LogOptions = [
             .request, .requestBody, .response, .responseBody,
         ]
@@ -90,6 +96,10 @@ public extension Labrador {
             case constant(TimeInterval)
             /// Exponential backoff: `base * 2^attempt`, capped at `maximum`.
             case exponential(base: TimeInterval = 1.0, maximum: TimeInterval = 30.0)
+            /// A fixed sequence of delays. `delays[0]` is used before the 2nd attempt,
+            /// `delays[1]` before the 3rd, etc. The last element is reused when
+            /// `attempt` exceeds the array bounds.
+            case fixed([TimeInterval])
 
             func delay(for attempt: Int) -> TimeInterval {
                 switch self {
@@ -97,6 +107,8 @@ public extension Labrador {
                     interval
                 case let .exponential(base, maximum):
                     min(base * pow(2.0, Double(attempt)), maximum)
+                case let .fixed(delays):
+                    delays.isEmpty ? 0 : delays[min(attempt, delays.count - 1)]
                 }
             }
         }
@@ -115,7 +127,18 @@ public extension Labrador {
             .timedOut,
             .networkConnectionLost,
             .notConnectedToInternet,
+            .cannotConnectToHost,
+            .cannotFindHost,
         ]
+
+        /// No retries — the first failure is thrown immediately.
+        public static let none = RetryPolicy(maxRetries: 0, backoff: .constant(0))
+
+        /// Three total attempts (two retries) with 1s then 5s delays.
+        public static let standard = RetryPolicy(maxRetries: 2, backoff: .fixed([1, 5]))
+
+        /// Five total attempts (four retries) with progressively longer delays.
+        public static let aggressive = RetryPolicy(maxRetries: 4, backoff: .fixed([1, 3, 10, 30]))
 
         public init(
             maxRetries: Int = 3,
@@ -199,6 +222,9 @@ public extension Labrador {
 
 public extension Labrador {
 
+    /// Client-wide settings passed to ``Labrador/init(configuration:)``.
+    ///
+    /// All properties have sensible defaults; only supply the ones you need.
     struct Configuration: Sendable {
 
         let json: Jayson
@@ -245,6 +271,7 @@ public extension Labrador {
 
 public extension Labrador {
 
+    /// The HTTP method used for a request.
     enum Method: String, Sendable {
         case delete = "DELETE"
         case get = "GET"
@@ -260,12 +287,18 @@ public extension Labrador {
 
 public extension Labrador {
 
+    /// The `Content-Type` of an HTTP request body.
     enum ContentType: Sendable {
 
+        /// `application/json`
         case json
+        /// `multipart/form-data` with the given boundary string.
         case multipartForm(String)
+        /// `application/x-www-form-urlencoded`
         case urlEncodedForm
+        /// `text/plain`
         case text
+        /// `application/octet-stream`
         case binary
 
         var value: String {
@@ -389,8 +422,11 @@ public extension Labrador {
         case notExtended = 510
         case networkAuthenticationRequired = 511
 
+        /// `true` for 2xx status codes.
         public var isSuccess: Bool { rawValue >= 200 && rawValue < 300 }
+        /// `true` for 4xx status codes.
         public var isClientError: Bool { rawValue >= 400 && rawValue < 500 }
+        /// `true` for 5xx status codes.
         public var isServerError: Bool { rawValue >= 500 && rawValue < 600 }
 
         public var description: String {
@@ -425,6 +461,8 @@ public extension Labrador {
 // MARK: - Extensions
 
 public extension HTTPURLResponse {
+    /// The HTTP status code as a typed ``Labrador/StatusCode``, or `nil` if
+    /// the raw integer value is not a recognised status code.
     var labradorStatusCode: Labrador.StatusCode? {
         .init(rawValue: statusCode)
     }

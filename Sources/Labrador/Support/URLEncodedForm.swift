@@ -19,7 +19,9 @@ public final class URLEncodedForm: SummaryProviding {
 
     public var data: Data {
         var components = URLComponents()
-        components.queryItems = parameters.map { URLQueryItem(name: "\($0.key)", value: "\($0.value)") }
+        components.queryItems = parameters.map {
+            URLQueryItem(name: "\($0.key)", value: "\($0.value)")
+        }
         return Data((components.percentEncodedQuery ?? "").utf8)
     }
 
