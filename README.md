@@ -163,7 +163,7 @@ Lightweight extensions on standard library and Foundation types:
 All MirageKit modules throw errors conforming to the `Yikes` protocol, which extends `LocalizedError` with structured fields:
 
 ```swift
-public protocol Yikes: Error, LocalizedError, Sendable {
+public protocol MirageKitError: Error, LocalizedError, Sendable {
     var summary: String { get }
     var title: String? { get }
     var details: String? { get }
