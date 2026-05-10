@@ -12,6 +12,8 @@ import Testing
 /// Thread-safe box for capturing sink output in tests.
 private final class SinkCapture: Sendable {
     nonisolated(unsafe) var level: Timber.Level?
+    nonisolated(unsafe) var subsystem: String?
+    nonisolated(unsafe) var category: String?
     nonisolated(unsafe) var message: String?
     nonisolated(unsafe) var file: String?
     nonisolated(unsafe) var line: UInt?
@@ -101,7 +103,7 @@ struct TimberSinkTests {
     func sinkReceivesError() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -118,7 +120,7 @@ struct TimberSinkTests {
     func sinkReceivesFault() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -135,7 +137,7 @@ struct TimberSinkTests {
     func sinkReceivesDebug() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -152,7 +154,7 @@ struct TimberSinkTests {
     func sinkReceivesInfo() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -169,7 +171,7 @@ struct TimberSinkTests {
     func sinkReceivesNotice() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -186,7 +188,7 @@ struct TimberSinkTests {
     func sinkReceivesFileAndLine() {
         let capture = SinkCapture()
 
-        Timber.sink = { _, _, file, line in
+        Timber.sink = { _, _, _, _, file, line in
             capture.file = file
             capture.line = line
         }
@@ -197,6 +199,23 @@ struct TimberSinkTests {
 
         #expect(capture.line == expectedLine)
         #expect(capture.file != nil)
+    }
+
+    @Test("Sink receives subsystem and category")
+    func sinkReceivesSubsystemAndCategory() {
+        let capture = SinkCapture()
+
+        Timber.sink = { _, subsystem, category, _, _, _ in
+            capture.subsystem = subsystem
+            capture.category = category
+        }
+        defer { Timber.sink = nil }
+
+        let log = Timber(subsystem: "com.example", category: "network")
+        log.error("test")
+
+        #expect(capture.subsystem == "com.example")
+        #expect(capture.category == "network")
     }
 
     @Test("Nil sink is safe")
@@ -214,7 +233,7 @@ struct TimberSinkTests {
     func errorWithTask() {
         let capture = SinkCapture()
 
-        Timber.sink = { _, message, _, _ in
+        Timber.sink = { _, _, _, message, _, _ in
             capture.message = message
         }
         defer { Timber.sink = nil }
@@ -229,7 +248,7 @@ struct TimberSinkTests {
     func errorWithoutTask() {
         let capture = SinkCapture()
 
-        Timber.sink = { _, message, _, _ in
+        Timber.sink = { _, _, _, message, _, _ in
             capture.message = message
         }
         defer { Timber.sink = nil }
@@ -244,7 +263,7 @@ struct TimberSinkTests {
     func errorWithErrorType() {
         let capture = SinkCapture()
 
-        Timber.sink = { _, message, _, _ in
+        Timber.sink = { _, _, _, message, _, _ in
             capture.message = message
         }
         defer { Timber.sink = nil }
@@ -263,7 +282,7 @@ struct TimberSinkTests {
     func errorWithErrorTypeNoTask() {
         let capture = SinkCapture()
 
-        Timber.sink = { _, message, _, _ in
+        Timber.sink = { _, _, _, message, _, _ in
             capture.message = message
         }
         defer { Timber.sink = nil }
@@ -282,7 +301,7 @@ struct TimberSinkTests {
     func faultWithTask() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -299,7 +318,7 @@ struct TimberSinkTests {
     func faultWithErrorType() {
         let capture = SinkCapture()
 
-        Timber.sink = { level, message, _, _ in
+        Timber.sink = { level, _, _, message, _, _ in
             capture.level = level
             capture.message = message
         }
@@ -459,6 +478,27 @@ struct TimberSinkTests {
         #expect(count == 0)
     }
 
+    @Test("enableLogStore persists subsystem and category")
+    func enableLogStorePersistsSubsystemAndCategory() async throws {
+        let dir = try makeTempDir()
+        defer {
+            Timber.sink = nil
+            cleanUp(dir)
+        }
+
+        let store = TimberLogStore(directory: dir)
+        Timber.enableLogStore(store)
+
+        let log = Timber(subsystem: "com.example", category: "network")
+        log.error("tagged error")
+
+        try await waitForEntryCount(1, in: store)
+
+        let entries = await store.entries
+        #expect(entries[0].subsystem == "com.example")
+        #expect(entries[0].category == "network")
+    }
+
     #endif
 }
 
@@ -506,6 +546,8 @@ struct TimberLogEntryTests {
             id: UUID(),
             timestamp: Date(),
             level: "error",
+            subsystem: "com.test",
+            category: "Tests",
             message: "something broke",
             file: "Test.swift",
             line: 42
@@ -521,9 +563,25 @@ struct TimberLogEntryTests {
 
         #expect(decoded.id == entry.id)
         #expect(decoded.level == entry.level)
+        #expect(decoded.subsystem == entry.subsystem)
+        #expect(decoded.category == entry.category)
         #expect(decoded.message == entry.message)
         #expect(decoded.file == entry.file)
         #expect(decoded.line == entry.line)
+    }
+
+    @Test("LogEntry decodes legacy entries missing subsystem/category")
+    func decodesLegacyEntries() throws {
+        // Simulate a persisted entry that predates the subsystem/category fields
+        let legacyJSON = """
+        {"file":"Old.swift","id":"00000000-0000-0000-0000-000000000001","level":"error","line":1,"message":"legacy","timestamp":"2024-01-01T00:00:00Z"}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let entry = try decoder.decode(TimberLogEntry.self, from: Data(legacyJSON.utf8))
+        #expect(entry.subsystem == "")
+        #expect(entry.category == "")
+        #expect(entry.message == "legacy")
     }
 
     @Test("LogEntry has stable id for Identifiable")
@@ -533,6 +591,8 @@ struct TimberLogEntryTests {
             id: id,
             timestamp: Date(),
             level: "fault",
+            subsystem: "com.test",
+            category: "Tests",
             message: "msg",
             file: "F.swift",
             line: 1
@@ -564,8 +624,8 @@ struct TimberLogStoreTests {
         defer { cleanUp(dir) }
 
         let store = TimberLogStore(directory: dir)
-        await store.append(level: .error, message: "err1", file: #fileID, line: #line)
-        await store.append(level: .fault, message: "flt1", file: #fileID, line: #line)
+        await store.append(level: .error, subsystem: "s", category: "c", message: "err1", file: #fileID, line: #line)
+        await store.append(level: .fault, subsystem: "s", category: "c", message: "flt1", file: #fileID, line: #line)
 
         let count = await store.entryCount
         #expect(count == 2)
@@ -584,7 +644,7 @@ struct TimberLogStoreTests {
         defer { cleanUp(dir) }
 
         let store1 = TimberLogStore(directory: dir)
-        await store1.append(level: .error, message: "persist me", file: #fileID, line: #line)
+        await store1.append(level: .error, subsystem: "s", category: "c", message: "persist me", file: #fileID, line: #line)
 
         // Create a new store from the same directory
         let store2 = TimberLogStore(directory: dir)
@@ -601,7 +661,7 @@ struct TimberLogStoreTests {
         defer { cleanUp(dir) }
 
         let store = TimberLogStore(directory: dir)
-        await store.append(level: .error, message: "gone", file: #fileID, line: #line)
+        await store.append(level: .error, subsystem: "s", category: "c", message: "gone", file: #fileID, line: #line)
         await store.deleteAll()
 
         let count = await store.entryCount
@@ -637,7 +697,7 @@ struct TimberLogStoreTests {
 
         let store = TimberLogStore(directory: dir)
         let gen = store.currentGeneration
-        await store.append(generation: gen, level: .error, message: "kept", file: #fileID, line: #line)
+        await store.append(generation: gen, level: .error, subsystem: "s", category: "c", message: "kept", file: #fileID, line: #line)
 
         let count = await store.entryCount
         #expect(count == 1)
@@ -652,7 +712,7 @@ struct TimberLogStoreTests {
         let staleGen = store.currentGeneration
         await store.deleteAll() // increments generation
 
-        await store.append(generation: staleGen, level: .error, message: "stale", file: #fileID, line: #line)
+        await store.append(generation: staleGen, level: .error, subsystem: "s", category: "c", message: "stale", file: #fileID, line: #line)
 
         let count = await store.entryCount
         #expect(count == 0)
@@ -676,6 +736,8 @@ struct TimberLogStoreTests {
                 id: UUID(),
                 timestamp: Date(),
                 level: "error",
+                subsystem: "s",
+                category: "c",
                 message: "entry \(i)",
                 file: "Test.swift",
                 line: UInt(i)
@@ -709,6 +771,8 @@ struct TimberLogStoreTests {
             id: UUID(),
             timestamp: Date().addingTimeInterval(-(TimberLogStore.maxAge + 1)),
             level: "error",
+            subsystem: "s",
+            category: "c",
             message: "old entry",
             file: "Old.swift",
             line: 1
@@ -717,6 +781,8 @@ struct TimberLogStoreTests {
             id: UUID(),
             timestamp: Date(),
             level: "error",
+            subsystem: "s",
+            category: "c",
             message: "new entry",
             file: "New.swift",
             line: 2
@@ -746,9 +812,9 @@ struct TimberLogStoreTests {
         defer { cleanUp(dir) }
 
         let store = TimberLogStore(directory: dir)
-        await store.append(level: .error, message: "a", file: #fileID, line: #line)
-        await store.append(level: .fault, message: "b", file: #fileID, line: #line)
-        await store.append(level: .error, message: "c", file: #fileID, line: #line)
+        await store.append(level: .error, subsystem: "s", category: "c", message: "a", file: #fileID, line: #line)
+        await store.append(level: .fault, subsystem: "s", category: "c", message: "b", file: #fileID, line: #line)
+        await store.append(level: .error, subsystem: "s", category: "c", message: "c", file: #fileID, line: #line)
 
         let count = await store.entryCount
         let entries = await store.entries
@@ -763,7 +829,7 @@ struct TimberLogStoreTests {
 
         let store = TimberLogStore(directory: dir)
         let expectedLine: UInt = #line + 1
-        await store.append(level: .error, message: "loc", file: #fileID, line: expectedLine)
+        await store.append(level: .error, subsystem: "s", category: "c", message: "loc", file: #fileID, line: expectedLine)
 
         let entries = await store.entries
         #expect(entries[0].file.contains("TimberTests"))

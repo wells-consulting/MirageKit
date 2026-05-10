@@ -29,7 +29,7 @@ import Foundation
         /// Optional callback invoked for every log message.
         /// Set at app startup to forward log entries externally.
         public nonisolated(unsafe) static var sink: (
-            @Sendable (_ level: Level, _ message: String, _ file: String, _ line: UInt) -> Void
+            @Sendable (_ level: Level, _ subsystem: String, _ category: String, _ message: String, _ file: String, _ line: UInt) -> Void
         )?
 
         // MARK: - Level
@@ -58,6 +58,8 @@ import Foundation
 
         // MARK: - Properties
 
+        let subsystem: String
+        let category: String
         private let logger: os.Logger
 
         // MARK: - Initializers
@@ -71,11 +73,15 @@ import Foundation
         public init(subsystem: String? = nil, category: String? = nil) {
             let subsystem = subsystem ?? "MirageKit"
             let category: String = category ?? "Core"
+            self.subsystem = subsystem
+            self.category = category
             self.logger = os.Logger(subsystem: subsystem, category: category)
         }
 
         /// Creates a logger scoped to the given subsystem and category.
         public init(subsystem: String, category: String) {
+            self.subsystem = subsystem
+            self.category = category
             self.logger = os.Logger(subsystem: subsystem, category: category)
         }
 
@@ -88,7 +94,7 @@ import Foundation
             line: UInt = #line,
         ) {
             logger.debug("\(message) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.debug, message, file, line)
+            Self.sink?(.debug, subsystem, category, message, file, line)
         }
 
         /// Logs a message at the **info** level.
@@ -98,7 +104,7 @@ import Foundation
             line: UInt = #line,
         ) {
             logger.info("\(message) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.info, message, file, line)
+            Self.sink?(.info, subsystem, category, message, file, line)
         }
 
         /// Logs a message at the **notice** level.
@@ -108,7 +114,7 @@ import Foundation
             line: UInt = #line,
         ) {
             logger.notice("\(message) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.notice, message, file, line)
+            Self.sink?(.notice, subsystem, category, message, file, line)
         }
 
         /// Logs a message at the **error** level.
@@ -118,7 +124,7 @@ import Foundation
             line: UInt = #line,
         ) {
             logger.error("\(message) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.error, message, file, line)
+            Self.sink?(.error, subsystem, category, message, file, line)
         }
 
         /// Logs a message at the **fault** level.
@@ -128,7 +134,7 @@ import Foundation
             line: UInt = #line,
         ) {
             logger.fault("\(message) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.fault, message, file, line)
+            Self.sink?(.fault, subsystem, category, message, file, line)
         }
 
         // MARK: - Convenience
@@ -150,7 +156,7 @@ import Foundation
                 message
             }
             logger.error("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.error, formatted, file, line)
+            Self.sink?(.error, subsystem, category, formatted, file, line)
         }
 
         /// Logs an `Error` value at the **error** level, optionally prefixed with a task name.
@@ -166,7 +172,7 @@ import Foundation
                 "\(error)"
             }
             logger.error("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.error, formatted, file, line)
+            Self.sink?(.error, subsystem, category, formatted, file, line)
         }
 
         /// Logs a task-failure message at the **fault** level.
@@ -186,7 +192,7 @@ import Foundation
                 message
             }
             logger.fault("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.fault, formatted, file, line)
+            Self.sink?(.fault, subsystem, category, formatted, file, line)
         }
 
         /// Logs an `Error` value at the **fault** level, optionally prefixed with a task name.
@@ -202,7 +208,7 @@ import Foundation
                 "\(error)"
             }
             logger.fault("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.fault, formatted, file, line)
+            Self.sink?(.fault, subsystem, category, formatted, file, line)
         }
     }
 
@@ -451,9 +457,59 @@ public extension Timber {
         public let id: UUID
         public let timestamp: Date
         public let level: String
+        public let subsystem: String
+        public let category: String
         public let message: String
         public let file: String
         public let line: UInt
+
+        public init(
+            id: UUID,
+            timestamp: Date,
+            level: String,
+            subsystem: String = "",
+            category: String = "",
+            message: String,
+            file: String,
+            line: UInt,
+        ) {
+            self.id = id
+            self.timestamp = timestamp
+            self.level = level
+            self.subsystem = subsystem
+            self.category = category
+            self.message = message
+            self.file = file
+            self.line = line
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case id, timestamp, level, subsystem, category, message, file, line
+        }
+
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(UUID.self, forKey: .id)
+            timestamp = try container.decode(Date.self, forKey: .timestamp)
+            level = try container.decode(String.self, forKey: .level)
+            subsystem = try container.decodeIfPresent(String.self, forKey: .subsystem) ?? ""
+            category = try container.decodeIfPresent(String.self, forKey: .category) ?? ""
+            message = try container.decode(String.self, forKey: .message)
+            file = try container.decode(String.self, forKey: .file)
+            line = try container.decode(UInt.self, forKey: .line)
+        }
+
+        public func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(id, forKey: .id)
+            try container.encode(timestamp, forKey: .timestamp)
+            try container.encode(level, forKey: .level)
+            try container.encode(subsystem, forKey: .subsystem)
+            try container.encode(category, forKey: .category)
+            try container.encode(message, forKey: .message)
+            try container.encode(file, forKey: .file)
+            try container.encode(line, forKey: .line)
+        }
     }
 
     // MARK: - LogStore
@@ -567,11 +623,13 @@ public extension Timber {
         /// Add a new entry to be persisted.
         public func append(
             level: Timber.Level,
+            subsystem: String = "",
+            category: String = "",
             message: String,
             file: String,
             line: UInt,
         ) {
-            appendEntry(level: level, message: message, file: file, line: line)
+            appendEntry(level: level, subsystem: subsystem, category: category, message: message, file: file, line: line)
         }
 
         /// Add a new entry only if the store's generation still matches.
@@ -582,12 +640,14 @@ public extension Timber {
         public func append(
             generation: Int,
             level: Timber.Level,
+            subsystem: String = "",
+            category: String = "",
             message: String,
             file: String,
             line: UInt,
         ) {
             guard generation == self.generation.withLock({ $0 }) else { return }
-            appendEntry(level: level, message: message, file: file, line: line)
+            appendEntry(level: level, subsystem: subsystem, category: category, message: message, file: file, line: line)
         }
 
         /// Delete all persisted entries and remove the backing file.
@@ -601,6 +661,8 @@ public extension Timber {
 
         private func appendEntry(
             level: Timber.Level,
+            subsystem: String,
+            category: String,
             message: String,
             file: String,
             line: UInt,
@@ -609,6 +671,8 @@ public extension Timber {
                 id: UUID(),
                 timestamp: Date(),
                 level: level.rawValue,
+                subsystem: subsystem,
+                category: category,
                 message: message,
                 file: "\(file)",
                 line: line,
@@ -679,13 +743,15 @@ public extension Timber {
             _ store: TimberLogStore = .shared,
             minimumLevel: Level = .error,
         ) {
-            Timber.sink = { level, message, file, line in
+            Timber.sink = { level, subsystem, category, message, file, line in
                 guard level >= minimumLevel else { return }
                 let gen = store.currentGeneration
                 Task {
                     await store.append(
                         generation: gen,
                         level: level,
+                        subsystem: subsystem,
+                        category: category,
                         message: message,
                         file: file,
                         line: line,
