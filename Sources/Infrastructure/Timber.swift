@@ -56,10 +56,23 @@ import Foundation
             }
         }
 
+        // MARK: - Options
+
+        public struct Options: OptionSet, Sendable {
+            public let rawValue: Int
+            public static let none: Options = []
+            public static let omitSourceLocation = Options(rawValue: 1 << 1)
+            public static let decorateSourceLocation = Options(rawValue: 1 << 2)
+            public init(rawValue: Int) {
+                self.rawValue = rawValue
+            }
+        }
+
         // MARK: - Properties
 
         let subsystem: String
         let category: String
+        let options: Options
         private let logger: os.Logger
 
         // MARK: - Initializers
@@ -70,18 +83,20 @@ import Foundation
         ///     (e.g. `"com.example.MyApp"`). Defaults to `"MirageKit"`.
         ///   - category: A label that groups related messages within the subsystem.
         ///     Defaults to `"Core"`.
-        public init(subsystem: String? = nil, category: String? = nil) {
+        public init(subsystem: String? = nil, category: String? = nil, options: Options = .none) {
             let subsystem = subsystem ?? "MirageKit"
             let category: String = category ?? "Core"
             self.subsystem = subsystem
             self.category = category
+            self.options = options
             self.logger = os.Logger(subsystem: subsystem, category: category)
         }
 
         /// Creates a logger scoped to the given subsystem and category.
-        public init(subsystem: String, category: String) {
+        public init(subsystem: String, category: String, options: Options = .none) {
             self.subsystem = subsystem
             self.category = category
+            self.options = options
             self.logger = os.Logger(subsystem: subsystem, category: category)
         }
 
@@ -93,7 +108,8 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.debug("\(message) \(Self.shortFile(file)):\(line)")
+            let formatted = formatMessage(message, file: file, line: line)
+            logger.debug("\(formatted)")
             Self.sink?(.debug, subsystem, category, message, file, line)
         }
 
@@ -103,7 +119,8 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.info("\(message) \(Self.shortFile(file)):\(line)")
+            let formatted = formatMessage(message, file: file, line: line)
+            logger.info("\(formatted)")
             Self.sink?(.info, subsystem, category, message, file, line)
         }
 
@@ -113,7 +130,8 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.notice("\(message) \(Self.shortFile(file)):\(line)")
+            let formatted = formatMessage(message, file: file, line: line)
+            logger.notice("\(formatted)")
             Self.sink?(.notice, subsystem, category, message, file, line)
         }
 
@@ -123,7 +141,8 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.error("\(message) \(Self.shortFile(file)):\(line)")
+            let formatted = formatMessage(message, file: file, line: line)
+            logger.error("\(formatted)")
             Self.sink?(.error, subsystem, category, message, file, line)
         }
 
@@ -133,7 +152,8 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            logger.fault("\(message) \(Self.shortFile(file)):\(line)")
+            let formatted = formatMessage(message, file: file, line: line)
+            logger.fault("\(formatted)")
             Self.sink?(.fault, subsystem, category, message, file, line)
         }
 
@@ -150,13 +170,10 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = if let task {
-                "\(task) failed with error: \(message)"
-            } else {
-                message
-            }
-            logger.error("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.error, subsystem, category, formatted, file, line)
+            let taskMessage = task.map { "\($0) failed with error: \(message)" } ?? message
+            let formatted = formatMessage(taskMessage, file: file, line: line)
+            logger.error("\(formatted)")
+            Self.sink?(.error, subsystem, category, taskMessage, file, line)
         }
 
         /// Logs an `Error` value at the **error** level, optionally prefixed with a task name.
@@ -166,13 +183,10 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = if let task {
-                "\(task) failed with error: \(error)"
-            } else {
-                "\(error)"
-            }
-            logger.error("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.error, subsystem, category, formatted, file, line)
+            let errorMessage = task.map { "\($0) failed with error: \(error)" } ?? "\(error)"
+            let formatted = formatMessage(errorMessage, file: file, line: line)
+            logger.error("\(formatted)")
+            Self.sink?(.error, subsystem, category, errorMessage, file, line)
         }
 
         /// Logs a task-failure message at the **fault** level.
@@ -186,13 +200,10 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = if let task {
-                "\(task) failed with error: \(message)"
-            } else {
-                message
-            }
-            logger.fault("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.fault, subsystem, category, formatted, file, line)
+            let taskMessage = task.map { "\($0) failed with error: \(message)" } ?? message
+            let formatted = formatMessage(taskMessage, file: file, line: line)
+            logger.fault("\(formatted)")
+            Self.sink?(.fault, subsystem, category, taskMessage, file, line)
         }
 
         /// Logs an `Error` value at the **fault** level, optionally prefixed with a task name.
@@ -202,13 +213,10 @@ import Foundation
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = if let task {
-                "\(task) failed with error: \(error)"
-            } else {
-                "\(error)"
-            }
-            logger.fault("\(formatted) \(Self.shortFile(file)):\(line)")
-            Self.sink?(.fault, subsystem, category, formatted, file, line)
+            let errorMessage = task.map { "\($0) failed with error: \(error)" } ?? "\(error)"
+            let formatted = formatMessage(errorMessage, file: file, line: line)
+            logger.fault("\(formatted)")
+            Self.sink?(.fault, subsystem, category, errorMessage, file, line)
         }
     }
 
@@ -439,10 +447,26 @@ extension Timber {
     }
 }
 
+#if canImport(os)
+
+    extension Timber {
+
+        func formatMessage(_ message: String, file: String, line: UInt) -> String {
+            if options.contains(.omitSourceLocation) {
+                message
+            } else if options.contains(.decorateSourceLocation) {
+                "\(message) [\(Self.shortFile(file)):\(line)]"
+            } else {
+                "\(message) \(Self.shortFile(file)):\(line)"
+            }
+        }
+    }
+
+#endif
+
 // MARK: - Shared Instance
 
 public extension Timber {
-
     static let shared = Timber(subsystem: Bundle.appName, category: "Mirage")
 }
 
