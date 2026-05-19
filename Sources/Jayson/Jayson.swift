@@ -9,6 +9,7 @@ public struct Jayson: Sendable {
 
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
+    private let stripNullEscapes: Bool
     private let log = Timber(subsystem: Bundle.appName, category: #fileID)
 
     public static let shared = Jayson()
@@ -24,6 +25,7 @@ public struct Jayson: Sendable {
         public let keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy
         public let dateDecodingStrategy: JSONDecoder.DateDecodingStrategy
         public let allowsJSON5: Bool
+        public let stripNullEscapes: Bool
 
         public init(
             keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .useDefaultKeys,
@@ -32,6 +34,7 @@ public struct Jayson: Sendable {
             keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .useDefaultKeys,
             dateDecodingStrategy: JSONDecoder.DateDecodingStrategy = .iso8601,
             allowsJSON5: Bool = true,
+            stripNullEscapes: Bool = false,
         ) {
             self.keyEncodingStrategy = keyEncodingStrategy
             self.dateEncodingStrategy = dateEncodingStrategy
@@ -39,6 +42,7 @@ public struct Jayson: Sendable {
             self.keyDecodingStrategy = keyDecodingStrategy
             self.dateDecodingStrategy = dateDecodingStrategy
             self.allowsJSON5 = allowsJSON5
+            self.stripNullEscapes = stripNullEscapes
         }
 
         public static let `default` = Configuration()
@@ -57,6 +61,7 @@ public struct Jayson: Sendable {
         decoder.dateDecodingStrategy = configuration.dateDecodingStrategy
         decoder.allowsJSON5 = configuration.allowsJSON5
         self.decoder = decoder
+        self.stripNullEscapes = configuration.stripNullEscapes
     }
 
     // MARK: - Encode
@@ -145,6 +150,17 @@ public struct Jayson: Sendable {
             throw JaysonError(process: .decode, summary: message, refcode: refcode)
         }
 
+        let decodableData: Data
+        if stripNullEscapes,
+           let str = String(data: data, encoding: .utf8),
+           str.contains("\\u0000") {
+            decodableData = str
+                .replacingOccurrences(of: "\\u0000", with: "")
+                .data(using: .utf8) ?? data
+        } else {
+            decodableData = data
+        }
+
         var summary: String
         var underlyingError: (any Error)?
 
@@ -163,7 +179,7 @@ public struct Jayson: Sendable {
                 }
             }
 
-            let object: T = try decoder.decode(T.self, from: data)
+            let object: T = try decoder.decode(T.self, from: decodableData)
 
             return object
         } catch let DecodingError.dataCorrupted(context) {
@@ -195,7 +211,7 @@ public struct Jayson: Sendable {
             summary: summary,
             underlyingError: underlyingError,
             userInfo: errorUserInfo,
-            data: data,
+            data: decodableData,
             refcode: refcode,
         )
     }
