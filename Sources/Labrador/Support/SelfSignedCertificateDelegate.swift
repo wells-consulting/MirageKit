@@ -26,24 +26,6 @@ import Foundation
 ///     delegateQueue: nil,
 /// )
 /// ```
-///
-/// ## Kingfisher integration
-///
-/// `handleChallenge(_:)` is public so consuming modules can retroactively
-/// conform this type to `AuthenticationChallengeResponsible` without
-/// MirageKit importing Kingfisher:
-///
-/// ```swift
-/// // In your app module (imports both MirageKit and Kingfisher)
-/// extension SelfSignedCertificateDelegate: @retroactive AuthenticationChallengeResponsible {
-///     func downloader(_ downloader: ImageDownloader, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
-///         handleChallenge(challenge)
-///     }
-///     func downloader(_ downloader: ImageDownloader, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
-///         handleChallenge(challenge)
-///     }
-/// }
-/// ```
 public final class SelfSignedCertificateDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate,
     Sendable
 {
