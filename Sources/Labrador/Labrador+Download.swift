@@ -28,13 +28,14 @@ public extension Labrador {
 
         let urlSession = urlSession
         let additionalHeaders = additionalHeaders
-        let effectiveTimeout = timeout ?? defaultTimeout
 
         return AsyncStream { continuation in
             let task = Task {
                 var urlRequest = URLRequest(url: url)
                 urlRequest.httpMethod = Method.get.rawValue
-                urlRequest.timeoutInterval = effectiveTimeout
+                if let timeout {
+                    urlRequest.timeoutInterval = timeout
+                }
 
                 for (name, value) in additionalHeaders {
                     urlRequest.setValue(value, forHTTPHeaderField: name)

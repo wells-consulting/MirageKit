@@ -227,7 +227,7 @@ public extension Labrador {
     /// All properties have sensible defaults; only supply the ones you need.
     struct Configuration: Sendable {
 
-        let json: Jayson
+        let jayson: Jayson
         let logOptions: LogOptions
         let headers: [String: String]
         let auth: OAuthToken?
@@ -236,33 +236,39 @@ public extension Labrador {
         let interceptors: [Interceptor]
         let retryPolicy: RetryPolicy?
         let baseURL: URL?
-        let timeout: TimeInterval
+        let requestTimeout: TimeInterval?
+        let resourceTimeout: TimeInterval?
         let tlsTrustPolicy: TLSTrustPolicy
+        let maxConnectionsPerHost: Int?
 
         public init(
             urlSession: URLSession? = nil,
             baseURL: URL? = nil,
             headers: [String: String] = [:],
             auth: OAuthToken? = nil,
-            json: Jayson? = nil,
+            jayson: Jayson? = nil,
             logOptions: LogOptions = [],
             cachePolicy: CachePolicy = .default,
             interceptors: [Interceptor] = [],
             retryPolicy: RetryPolicy? = nil,
-            timeout: TimeInterval = Labrador.defaultTimeout,
+            requestTimeout: TimeInterval? = nil,
+            resourceTimeout: TimeInterval? = nil,
             tlsTrustPolicy: TLSTrustPolicy = .system,
+            maxConnectionsPerHost: Int? = nil
         ) {
             self.urlSession = urlSession
             self.baseURL = baseURL
             self.headers = headers
             self.auth = auth
-            self.json = json ?? .shared
+            self.jayson = jayson ?? .shared
             self.logOptions = logOptions
             self.cachePolicy = cachePolicy
             self.interceptors = interceptors
             self.retryPolicy = retryPolicy
-            self.timeout = timeout
+            self.requestTimeout = requestTimeout
+            self.resourceTimeout = resourceTimeout
             self.tlsTrustPolicy = tlsTrustPolicy
+            self.maxConnectionsPerHost = maxConnectionsPerHost
         }
     }
 }

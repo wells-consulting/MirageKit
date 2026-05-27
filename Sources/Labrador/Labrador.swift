@@ -26,19 +26,15 @@ public actor Labrador {
     let urlSession: URLSession
     var additionalHeaders: [String: String] = [:]
     private let logOptions: LogOptions
-    let json: Jayson
-    private let log: Timber
+    let jayson: Jayson
+    private let timber: Timber
     private let interceptors: [Interceptor]
     private let retryPolicy: RetryPolicy?
     private let baseURL: URL?
-    let defaultTimeout: TimeInterval
 
     /// Retained so the URLSession delegate stays alive for the
     /// lifetime of this Labrador instance.
     private let sessionDelegate: (any URLSessionDelegate)?
-
-    /// The default request timeout interval in seconds.
-    public static let defaultTimeout: TimeInterval = 30.0
 
     // MARK: - Initializer
 
@@ -52,27 +48,33 @@ public actor Labrador {
             self.urlSession = urlSession
             self.sessionDelegate = nil
         } else {
-            let urlSessionConfiguration = URLSessionConfiguration.default
-            urlSessionConfiguration.httpAdditionalHeaders = configuration.headers
-            urlSessionConfiguration.timeoutIntervalForRequest = configuration.timeout
-            urlSessionConfiguration.httpCookieStorage = HTTPCookieStorage.shared
-            urlSessionConfiguration.requestCachePolicy = configuration.cachePolicy.urlRequestCachePolicy
-
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.httpAdditionalHeaders = configuration.headers
+            sessionConfig.httpCookieStorage = HTTPCookieStorage.shared
+            sessionConfig.requestCachePolicy = configuration.cachePolicy.urlRequestCachePolicy
+            if let requestTimeout = configuration.requestTimeout {
+                sessionConfig.timeoutIntervalForRequest = requestTimeout
+            }
+            if let resourceTimeout = configuration.resourceTimeout {
+                sessionConfig.timeoutIntervalForResource = resourceTimeout
+            }
+            if let maxConnectionsPerHost = configuration.maxConnectionsPerHost {
+                sessionConfig.httpMaximumConnectionsPerHost = maxConnectionsPerHost
+            }
             let delegate = Self.makeDelegate(for: configuration.tlsTrustPolicy)
             self.sessionDelegate = delegate
             self.urlSession = URLSession(
-                configuration: urlSessionConfiguration,
+                configuration: sessionConfig,
                 delegate: delegate,
                 delegateQueue: nil,
             )
         }
 
         self.logOptions = configuration.logOptions
-        self.json = configuration.json
+        self.jayson = configuration.jayson
         self.interceptors = configuration.interceptors
         self.retryPolicy = configuration.retryPolicy
         self.baseURL = configuration.baseURL
-        self.defaultTimeout = configuration.timeout
 
         for (name, value) in configuration.headers {
             additionalHeaders[name] = value
@@ -82,7 +84,7 @@ public actor Labrador {
             additionalHeaders["Authorization"] = "Bearer \(accessToken)"
         }
 
-        self.log = Timber(subsystem: Bundle.appName, category: #fileID)
+        self.timber = Timber(subsystem: Bundle.appName, category: #fileID)
     }
 
     // MARK: - Dispatch
@@ -104,9 +106,9 @@ public actor Labrador {
                 logOptions.contains(.requestBody),
                 let summary = clientRequest.payloadSummary
             {
-                log.debug("\(clientRequest.requestSummary): \(summary)")
+                timber.debug("\(clientRequest.requestSummary): \(summary)")
             } else {
-                log.debug(clientRequest.requestSummary)
+                timber.debug(clientRequest.requestSummary)
             }
         }
 
@@ -198,7 +200,7 @@ public actor Labrador {
             // Wait before retrying (not on the first attempt)
             if attempt > 0, let effectiveRetryPolicy {
                 let delay = effectiveRetryPolicy.backoff.delay(for: attempt - 1)
-                log.notice("Retrying request (attempt \(attempt + 1) of \(maxAttempts)) after \(String(format: "%.0f", delay))s delay: \(urlRequest.url?.absoluteString ?? "unknown")")
+                timber.notice("Retrying request (attempt \(attempt + 1) of \(maxAttempts)) after \(String(format: "%.0f", delay))s delay: \(urlRequest.url?.absoluteString ?? "unknown")")
                 try await Task.sleep(for: .seconds(delay))
                 try Task.checkCancellation()
             }
@@ -267,7 +269,7 @@ public actor Labrador {
 
         if shouldLogResponse {
             let message = httpResponse.logDescription(includeResponseBody: shouldLogResponseBody)
-            log.debug(message)
+            timber.debug(message)
         }
 
         // Unrecoverable error: status code must be known
@@ -286,7 +288,7 @@ public actor Labrador {
 
         guard statusCode.isSuccess else {
             let bodyText = String(data: data, encoding: .utf8).map { String($0.prefix(2000)) }
-            log.error("\(statusCode.description): \(bodyText ?? "(no body)")")
+            timber.error("\(statusCode.description): \(bodyText ?? "(no body)")")
             throw LabradorError(
                 summary: Self.userFacingSummary(for: statusCode),
                 details: statusCode.description,
@@ -451,7 +453,7 @@ public extension Labrador {
         )
 
         let (data, _) = try await request(clientRequest, options: options)
-        return try json.decode(outputType, from: data, userInfo: nil)
+        return try jayson.decode(outputType, from: data, userInfo: nil)
     }
 }
 
@@ -469,8 +471,6 @@ extension Labrador {
         let logOptions: LogOptions?
         let logContext: String?
 
-        static let defaultTimeout: TimeInterval = Labrador.defaultTimeout
-
         init(
             url: URL,
             method: Method,
@@ -479,7 +479,6 @@ extension Labrador {
             logOptions: LogOptions? = nil,
             headers: [String: String]?,
             timeout: TimeInterval?,
-            defaultTimeout: TimeInterval = Self.defaultTimeout,
             logContext: String? = nil,
         ) {
 
@@ -490,7 +489,9 @@ extension Labrador {
 
             urlRequest.httpMethod = method.rawValue
             urlRequest.httpBody = payload?.data
-            urlRequest.timeoutInterval = timeout ?? defaultTimeout
+            if let timeout {
+                urlRequest.timeoutInterval = timeout
+            }
 
             if let acceptValue = accept?.value {
                 urlRequest.addValue(acceptValue, forHTTPHeaderField: "Accept")
@@ -689,7 +690,6 @@ extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -727,7 +727,6 @@ extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -744,7 +743,7 @@ extension Labrador {
         logContext: String? = nil,
     ) async throws -> (Data?, HTTPURLResponse) {
 
-        let data = try json.encode(input, userInfo: nil)
+        let data = try jayson.encode(input, userInfo: nil)
 
         let payload = Payload(
             data: data,
@@ -760,7 +759,6 @@ extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -779,7 +777,7 @@ extension Labrador {
         logContext: String? = nil,
     ) async throws -> Output {
 
-        let data = try json.encode(input, userInfo: userInfo)
+        let data = try jayson.encode(input, userInfo: userInfo)
 
         let payload = Payload(
             data: data,
@@ -796,7 +794,6 @@ extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -811,7 +808,7 @@ extension Labrador {
 
         let (data, _) = try await request(clientRequest)
 
-        return try json.decode(
+        return try jayson.decode(
             outputType,
             from: data,
             userInfo: userInfo,
@@ -826,7 +823,7 @@ extension Labrador {
 
         let (data, httpURLResponse) = try await request(clientRequest)
 
-        let value = try json.decode(
+        let value = try jayson.decode(
             outputType,
             from: data,
             userInfo: userInfo,

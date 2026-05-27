@@ -35,7 +35,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -53,7 +52,7 @@ public extension Labrador {
         logContext: String? = nil,
     ) async throws -> Response<Output> {
 
-        let data = try json.encode(input, userInfo: userInfo)
+        let data = try jayson.encode(input, userInfo: userInfo)
 
         let payload = Payload(
             data: data,
@@ -70,7 +69,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -88,7 +86,7 @@ public extension Labrador {
         logContext: String? = nil,
     ) async throws -> Response<Output> {
 
-        let data = try json.encode(input, userInfo: userInfo)
+        let data = try jayson.encode(input, userInfo: userInfo)
 
         let payload = Payload(
             data: data,
@@ -105,7 +103,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -123,7 +120,7 @@ public extension Labrador {
         logContext: String? = nil,
     ) async throws -> Response<Output> {
 
-        let data = try json.encode(input, userInfo: userInfo)
+        let data = try jayson.encode(input, userInfo: userInfo)
 
         let payload = Payload(
             data: data,
@@ -140,7 +137,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -158,7 +154,7 @@ public extension Labrador {
         logContext: String? = nil,
     ) async throws -> Response<Output> {
 
-        let data = try json.encode(input, userInfo: userInfo)
+        let data = try jayson.encode(input, userInfo: userInfo)
 
         let payload = Payload(
             data: data,
@@ -175,7 +171,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -210,7 +205,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -237,7 +231,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -264,7 +257,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 

@@ -20,13 +20,22 @@ struct LabradorConfigurationTests {
         #expect(config.interceptors.isEmpty)
         #expect(config.retryPolicy == nil)
         #expect(config.baseURL == nil)
-        #expect(config.timeout == Labrador.defaultTimeout)
+        #expect(config.requestTimeout == nil)
+        #expect(config.resourceTimeout == nil)
+        #expect(config.maxConnectionsPerHost == nil)
+        #expect(config.tlsTrustPolicy == .system)
     }
 
-    @Test("Configuration - custom timeout")
+    @Test("Configuration - custom request timeout")
     func customTimeout() {
-        let config = Labrador.Configuration(timeout: 60.0)
-        #expect(config.timeout == 60.0)
+        let config = Labrador.Configuration(requestTimeout: 60.0)
+        #expect(config.requestTimeout == 60.0)
+    }
+
+    @Test("Configuration - custom resource timeout")
+    func customResourceTimeout() {
+        let config = Labrador.Configuration(resourceTimeout: 60.0)
+        #expect(config.resourceTimeout == 60.0)
     }
 
     @Test("Configuration - custom headers")
@@ -54,11 +63,6 @@ struct LabradorConfigurationTests {
         let policy = Labrador.RetryPolicy(maxRetries: 5)
         let config = Labrador.Configuration(retryPolicy: policy)
         #expect(config.retryPolicy?.maxRetries == 5)
-    }
-
-    @Test("Default timeout constant")
-    func defaultTimeoutConstant() {
-        #expect(Labrador.defaultTimeout == 30.0)
     }
 
     @Test("Configuration - default TLS trust policy is system")

@@ -56,7 +56,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -152,7 +151,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -180,7 +178,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -212,7 +209,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
@@ -240,7 +236,6 @@ public extension Labrador {
             logOptions: logging,
             headers: headers,
             timeout: timeout,
-            defaultTimeout: defaultTimeout,
             logContext: logContext,
         )
 
