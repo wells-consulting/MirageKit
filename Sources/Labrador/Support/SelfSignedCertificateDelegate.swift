@@ -60,9 +60,6 @@ public final class SelfSignedCertificateDelegate: NSObject, URLSessionDelegate, 
     /// Accepts a server trust challenge by creating a credential from the
     /// server's certificate. Returns `.performDefaultHandling` for any
     /// challenge that isn't server-trust based.
-    ///
-    /// Exposed as `public` so Kingfisher's `AuthenticationChallengeResponsible`
-    /// can be implemented in the consuming module — see type-level docs.
     public func handleChallenge(
         _ challenge: URLAuthenticationChallenge,
     ) -> (URLSession.AuthChallengeDisposition, URLCredential?) {

@@ -119,15 +119,23 @@ public extension Labrador {
     /// `.cancelled(resumeData:)` event carries opaque resume data (may be `nil`
     /// for very short downloads) that can be passed back via `resumeData:` on the
     /// next call.
-    public func downloadToFile(
+    func downloadToFile(
         _ request: URLRequest,
         resumeData: Data? = nil,
+        trustSelfSignedCertificates: Bool = false,
+        httpMaximumConnectionsPerHost: Int? = nil,
         logContext: String? = nil,
     ) -> AsyncStream<FileDownloadEvent> {
 
-        let coordinator = FileDownloadCoordinator()
+        let coordinator = FileDownloadCoordinator(trustSelfSignedCertificates: trustSelfSignedCertificates)
+
+        let config = URLSessionConfiguration.default
+        if let httpMaximumConnectionsPerHost {
+            config.httpMaximumConnectionsPerHost = httpMaximumConnectionsPerHost
+        }
+
         let session = URLSession(
-            configuration: .default,
+            configuration: config,
             delegate: coordinator,
             delegateQueue: nil,
         )
@@ -171,9 +179,14 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
 
     private static let progressInterval: Int64 = 65_536
 
+    private let trustSelfSignedCertificates: Bool
     private let lock = NSLock()
     private var continuations: [Int: AsyncStream<Labrador.FileDownloadEvent>.Continuation] = [:]
     private var lastReportedBytes: [Int: Int64] = [:]
+
+    init(trustSelfSignedCertificates: Bool) {
+        self.trustSelfSignedCertificates = trustSelfSignedCertificates
+    }
 
     func register(
         _ continuation: AsyncStream<Labrador.FileDownloadEvent>.Continuation,
@@ -191,6 +204,23 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
         defer { lock.unlock() }
         lastReportedBytes.removeValue(forKey: taskID)
         return continuations.removeValue(forKey: taskID)
+    }
+
+    // MARK: URLSessionDelegate
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void,
+    ) {
+        if trustSelfSignedCertificates,
+           challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+           let trust = challenge.protectionSpace.serverTrust
+        {
+            completionHandler(.useCredential, URLCredential(trust: trust))
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
     }
 
     // MARK: URLSessionDownloadDelegate
@@ -259,7 +289,7 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
     func urlSession(
         _ session: URLSession,
         task: URLSessionTask,
-        didCompleteWithError error: Error?,
+        didCompleteWithError error: (any Error)?,
     ) {
         let continuation = unregister(for: task.taskIdentifier)
 
