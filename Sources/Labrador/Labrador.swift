@@ -402,8 +402,8 @@ public actor Labrador {
 
 public extension Labrador {
 
-    func request(
-        _ urlRequest: URLRequest,
+    func data(
+        from urlRequest: URLRequest,
         options: RequestOptions? = nil,
         logging: LogOptions? = nil,
         logContext: String? = nil,
