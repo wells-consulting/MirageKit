@@ -29,28 +29,31 @@ public extension Labrador {
         logContext: String? = nil,
     ) -> AsyncStream<UploadEvent> {
 
+        let summary = body.count.formatted(.byteCount(style: .binary))
+
+        let clientRequest = ClientRequest(
+            url: url,
+            method: method,
+            payload: .some(
+                .init(
+                    data: body,
+                    contentType: contentType,
+                    typeName: nil,
+                    summary: summary
+                )),
+            headers: headers,
+            timeout: timeout,
+            logContext: logContext
+        )
+
+        log(clientRequest)
+
+        let urlRequest = urlRequestWithUpdatedHeaders(from: clientRequest)
+
         let urlSession = urlSession
-        let additionalHeaders = additionalHeaders
 
         return AsyncStream { continuation in
             let task = Task {
-                var urlRequest = URLRequest(url: url)
-                urlRequest.httpMethod = method.rawValue
-                urlRequest.setValue(contentType.value, forHTTPHeaderField: "Content-Type")
-                if let timeout {
-                    urlRequest.timeoutInterval = timeout
-                }
-
-                for (name, value) in additionalHeaders {
-                    urlRequest.setValue(value, forHTTPHeaderField: name)
-                }
-
-                if let headers {
-                    for (name, value) in headers {
-                        urlRequest.setValue(value, forHTTPHeaderField: name)
-                    }
-                }
-
                 let delegate = UploadProgressDelegate(continuation: continuation)
 
                 do {
