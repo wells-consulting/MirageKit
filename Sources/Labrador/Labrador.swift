@@ -403,7 +403,7 @@ public actor Labrador {
 public extension Labrador {
 
     func data(
-        _ urlRequest: URLRequest,
+        from urlRequest: URLRequest,
         options: RequestOptions? = nil,
         logging: LogOptions? = nil,
         logContext: String? = nil,
