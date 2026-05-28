@@ -91,7 +91,7 @@ public actor Labrador {
 
     private nonisolated(unsafe) static let requestCounter = RequestCounter()
 
-    func request(
+    func dispatch(
         _ clientRequest: ClientRequest,
         options: RequestOptions? = nil,
     ) async throws -> (Data, HTTPURLResponse) {
@@ -99,31 +99,11 @@ public actor Labrador {
         // Support cooperative cancellation: bail out early if already cancelled
         try Task.checkCancellation()
 
-        let logOptions = clientRequest.logOptions ?? logOptions
-
-        if logOptions.contains(.request) {
-            if
-                logOptions.contains(.requestBody),
-                let summary = clientRequest.payloadSummary
-            {
-                timber.debug("\(clientRequest.requestSummary): \(summary)")
-            } else {
-                timber.debug(clientRequest.requestSummary)
-            }
-        }
-
+        let logOptions = log(clientRequest)
         let shouldLogResponse = logOptions.contains(.response)
         let shouldLogResponseBody = logOptions.contains(.responseBody)
 
-        var urlRequest = clientRequest.urlRequest
-
-        for (name, value) in additionalHeaders {
-            if urlRequest.allHTTPHeaderFields == nil {
-                urlRequest.allHTTPHeaderFields = [name: value]
-            } else {
-                urlRequest.allHTTPHeaderFields?[name] = value
-            }
-        }
+        let urlRequest = urlRequestWithUpdatedHeaders(from: clientRequest)
 
         // Build the interceptor chain around the network call.
         // The innermost function performs the actual URLSession request.
@@ -422,8 +402,8 @@ public actor Labrador {
 
 public extension Labrador {
 
-    func data(
-        from urlRequest: URLRequest,
+    func request(
+        _ urlRequest: URLRequest,
         options: RequestOptions? = nil,
         logging: LogOptions? = nil,
         logContext: String? = nil,
@@ -435,11 +415,11 @@ public extension Labrador {
             logContext: logContext,
         )
 
-        return try await request(clientRequest, options: options)
+        return try await dispatch(clientRequest, options: options)
     }
 
-    func data<Output: Decodable>(
-        from urlRequest: URLRequest,
+    func request<Output: Decodable>(
+        _ urlRequest: URLRequest,
         as outputType: Output.Type,
         options: RequestOptions? = nil,
         logging: LogOptions? = nil,
@@ -452,7 +432,7 @@ public extension Labrador {
             logContext: logContext,
         )
 
-        let (data, _) = try await request(clientRequest, options: options)
+        let (data, _) = try await dispatch(clientRequest, options: options)
         return try jayson.decode(outputType, from: data, userInfo: nil)
     }
 }
@@ -669,7 +649,7 @@ extension Labrador {
     }
 }
 
-// MARK: - Internal Request Helpers
+// MARK: - Internal Helpers
 
 extension Labrador {
 
@@ -693,7 +673,7 @@ extension Labrador {
             logContext: logContext,
         )
 
-        return try await request(clientRequest)
+        return try await dispatch(clientRequest)
     }
 
     func request<Output: Decodable>(
@@ -762,7 +742,7 @@ extension Labrador {
             logContext: logContext,
         )
 
-        return try await request(clientRequest)
+        return try await dispatch(clientRequest)
     }
 
     func request<Input: Encodable, Output: Decodable>(
@@ -806,7 +786,7 @@ extension Labrador {
         userInfo: [CodingUserInfoKey: any Sendable]?,
     ) async throws -> Output {
 
-        let (data, _) = try await request(clientRequest)
+        let (data, _) = try await dispatch(clientRequest)
 
         return try jayson.decode(
             outputType,
@@ -821,7 +801,7 @@ extension Labrador {
         userInfo: [CodingUserInfoKey: any Sendable]?,
     ) async throws -> Response<Output> {
 
-        let (data, httpURLResponse) = try await request(clientRequest)
+        let (data, httpURLResponse) = try await dispatch(clientRequest)
 
         let value = try jayson.decode(
             outputType,
@@ -836,7 +816,7 @@ extension Labrador {
         _ clientRequest: ClientRequest,
     ) async throws -> Response<Data> {
 
-        let (data, httpURLResponse) = try await request(clientRequest)
+        let (data, httpURLResponse) = try await dispatch(clientRequest)
         return Response(value: data, httpResponse: httpURLResponse)
     }
 
@@ -877,6 +857,34 @@ extension Labrador {
         func get() -> Int {
             queue.sync { value }
         }
+    }
+
+    func urlRequestWithUpdatedHeaders(from request: ClientRequest) -> URLRequest {
+        var urlRequest = request.urlRequest
+        for (name, value) in additionalHeaders {
+            if urlRequest.allHTTPHeaderFields == nil {
+                urlRequest.allHTTPHeaderFields = [name: value]
+            } else {
+                urlRequest.allHTTPHeaderFields?[name] = value
+            }
+        }
+        return urlRequest
+    }
+
+    @discardableResult
+    func log(_ request: ClientRequest, file: String = #fileID, line: UInt = #line) -> LogOptions {
+        let logOptions = request.logOptions ?? logOptions
+        if logOptions.contains(.request) {
+            if
+                logOptions.contains(.requestBody),
+                let summary = request.payloadSummary
+            {
+                timber.debug("\(request.requestSummary): \(summary)", file: file, line: line)
+            } else {
+                timber.debug(request.requestSummary, file: file, line: line)
+            }
+        }
+        return logOptions
     }
 
     #if canImport(Security)

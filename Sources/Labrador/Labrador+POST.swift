@@ -59,7 +59,7 @@ public extension Labrador {
             logContext: logContext,
         )
 
-        return try await request(clientRequest).0
+        return try await dispatch(clientRequest).0
     }
 
     func post<Output: Decodable>(
@@ -154,7 +154,7 @@ public extension Labrador {
             logContext: logContext,
         )
 
-        return try await request(clientRequest).0
+        return try await dispatch(clientRequest).0
     }
 
     func post<Output: Decodable>(
@@ -212,7 +212,7 @@ public extension Labrador {
             logContext: logContext,
         )
 
-        return try await request(clientRequest).0
+        return try await dispatch(clientRequest).0
     }
 
     func post<Output: Decodable>(

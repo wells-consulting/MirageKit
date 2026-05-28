@@ -410,7 +410,7 @@ struct LabradorRetryTests {
 
         var urlRequest = URLRequest(url: mockURL)
         urlRequest.httpMethod = "GET"
-        let (_, response) = try await client.data(from: urlRequest)
+        let (_, response) = try await client.dispatchRequest(urlRequest)
 
         #expect(response.statusCode == 200)
         #expect(MockURLProtocol.callCount == 3)
@@ -429,7 +429,7 @@ struct LabradorRetryTests {
         urlRequest.httpMethod = "GET"
 
         await #expect(throws: (any Error).self) {
-            try await client.data(from: urlRequest)
+            try await client.dispatchRequest(urlRequest)
         }
         #expect(MockURLProtocol.callCount == 1)
     }
@@ -446,7 +446,7 @@ struct LabradorRetryTests {
 
         var urlRequest = URLRequest(url: mockURL)
         urlRequest.httpMethod = "GET"
-        let (_, response) = try await client.data(from: urlRequest)
+        let (_, response) = try await client.dispatchRequest(urlRequest)
 
         #expect(response.statusCode == 200)
         #expect(MockURLProtocol.callCount == 2)
@@ -467,7 +467,7 @@ struct LabradorRetryTests {
         urlRequest.httpMethod = "GET"
 
         await #expect(throws: (any Error).self) {
-            try await client.data(from: urlRequest)
+            try await client.dispatchRequest(urlRequest)
         }
         #expect(MockURLProtocol.callCount == 3)
     }
@@ -486,7 +486,7 @@ struct LabradorRetryTests {
         urlRequest.httpMethod = "GET"
 
         await #expect(throws: (any Error).self) {
-            try await client.data(from: urlRequest, options: .init(skipRetry: true))
+            try await client.dispatchRequest(urlRequest, options: .init(skipRetry: true))
         }
         #expect(MockURLProtocol.callCount == 1)
     }

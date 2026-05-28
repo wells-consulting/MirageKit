@@ -26,27 +26,22 @@ public extension Labrador {
         logContext: String? = nil,
     ) -> AsyncStream<DownloadEvent> {
 
+        let clientRequest = ClientRequest(
+            url: url,
+            method: .get,
+            payload: nil,
+            headers: headers,
+            timeout: timeout
+        )
+
+        log(clientRequest)
+
+        let urlRequest = urlRequestWithUpdatedHeaders(from: clientRequest)
+
         let urlSession = urlSession
-        let additionalHeaders = additionalHeaders
 
         return AsyncStream { continuation in
             let task = Task {
-                var urlRequest = URLRequest(url: url)
-                urlRequest.httpMethod = Method.get.rawValue
-                if let timeout {
-                    urlRequest.timeoutInterval = timeout
-                }
-
-                for (name, value) in additionalHeaders {
-                    urlRequest.setValue(value, forHTTPHeaderField: name)
-                }
-
-                if let headers {
-                    for (name, value) in headers {
-                        urlRequest.setValue(value, forHTTPHeaderField: name)
-                    }
-                }
-
                 do {
                     let (asyncBytes, urlResponse) = try await urlSession.bytes(for: urlRequest)
 
@@ -127,6 +122,13 @@ public extension Labrador {
         httpMaximumConnectionsPerHost: Int? = nil,
         logContext: String? = nil,
     ) -> AsyncStream<FileDownloadEvent> {
+
+        let clientRequest = ClientRequest(
+            urlRequest: request,
+            logContext: logContext
+        )
+
+        log(clientRequest)
 
         let coordinator = FileDownloadCoordinator(trustSelfSignedCertificates: trustSelfSignedCertificates)
 
