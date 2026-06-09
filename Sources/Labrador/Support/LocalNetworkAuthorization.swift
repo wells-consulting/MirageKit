@@ -20,7 +20,7 @@
 import Foundation
 import Network
 
-private let log = Timber(category: "LocalNetworkAuth")
+private let log = Timber(category: "LocalNetworkAuth", options: [.omitSourceLocation])
 private let serviceType = "_preflight_check._tcp"
 
 /// Checks whether Local Network permission has been granted. If the

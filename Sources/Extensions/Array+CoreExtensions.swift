@@ -5,12 +5,20 @@
 
 import Foundation
 
-/// Core Array extensions
-extension Array: SummaryProviding where Element: SummaryProviding {
+// MARK: Core Array extensions
 
+extension Array: SummaryProviding where Element: SummaryProviding {
     /// Default summary of an array
     public var summary: String {
         "[" + map(\.summary).joined(separator: ", ") + "]"
+    }
+}
+
+extension Array: LogTextProviding where Element: LogTextProviding {
+
+    /// Default summary of an array
+    public var logText: String {
+        "[" + map(\.logText).joined(separator: ", ") + "]"
     }
 }
 

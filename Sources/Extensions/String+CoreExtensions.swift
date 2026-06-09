@@ -157,6 +157,14 @@ public extension String {
             lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
         }
     }
+
+    /// Returns a redacted string that is safe to log.
+    func partiallyRedacted() -> String {
+        guard count > 12 else { return "<redacted>" }
+        let prefix = prefix(4)
+        let suffix = suffix(4)
+        return "\(prefix)...\(suffix)"
+    }
 }
 
 // MARK: - Optional String

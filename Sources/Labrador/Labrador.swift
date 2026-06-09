@@ -84,7 +84,11 @@ public actor Labrador {
             additionalHeaders["Authorization"] = "Bearer \(accessToken)"
         }
 
-        self.timber = Timber(subsystem: Bundle.appName, category: #fileID)
+        self.timber = Timber(
+            subsystem: Bundle.appName,
+            category: #fileID,
+            options: [.omitSourceLocation]
+        )
     }
 
     // MARK: - Dispatch
@@ -501,7 +505,7 @@ extension Labrador {
                 self.requestSummary = requestSummary
             } else {
                 // Original format for non-context requests
-                var requestSummary = "#\(id) -> \(method.rawValue) \(url.description)"
+                var requestSummary = "#\(id) -> \(method.rawValue) \(url.redacted())"
                 if let payloadTypeName = payload?.typeName {
                     requestSummary += " \(payloadTypeName)"
                 }
@@ -532,7 +536,7 @@ extension Labrador {
             }
 
             if let url = urlRequest.url {
-                requestSummary += " \(url.description)"
+                requestSummary += " \(url.redacted())"
             }
 
             if let data = urlRequest.httpBody {
@@ -590,20 +594,9 @@ extension Labrador {
         private static func extractHeaders(
             from httpURLResponse: HTTPURLResponse,
         ) -> (StatusCode?, [String: String]?) {
-
-            var headers: [String: String] = [:]
-
-            for (key, value) in httpURLResponse.allHeaderFields {
-                guard
-                    let keyString = key as? String,
-                    let valueString = value as? String
-                else { continue }
-                headers[keyString] = valueString
-            }
-
-            return (
+            (
                 StatusCode(rawValue: httpURLResponse.statusCode),
-                headers.isEmpty ? nil : headers,
+                httpURLResponse.redactedHeaders(),
             )
         }
 
@@ -627,12 +620,14 @@ extension Labrador {
 
             var responseDescription: String?
 
+            #if DEBUG
             if forceIncludeResponseBody || includeResponseBody, let data, !data.isEmpty {
                 parts.append(data.count.formatted(.byteCount(style: .memory)))
                 if let text = String(data: data, encoding: .utf8) {
                     responseDescription = "\n----\n" + text + "\n-----"
                 }
             }
+            #endif
 
             var description = parts.joined(separator: ", ")
 

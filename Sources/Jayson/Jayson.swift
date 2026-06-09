@@ -10,7 +10,12 @@ public struct Jayson: Sendable {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
     private let stripNullEscapes: Bool
-    private let log = Timber(subsystem: Bundle.appName, category: #fileID)
+    
+    private let log = Timber(
+        subsystem: Bundle.appName,
+        category: #fileID,
+        options: [.omitSourceLocation]
+    )
 
     public static let shared = Jayson()
 
