@@ -14,6 +14,10 @@ public extension Date {
         formatted(.iso8601)
     }
 
+    var timestamp: String {
+        formatted(.iso8601)
+    }
+
     var shortDate: String {
         formatted(date: .numeric, time: .omitted)
     }
@@ -26,18 +30,81 @@ public extension Date {
         formatted(date: .omitted, time: .shortened)
     }
 
+    var mediumDate: String {
+        formatted(date: .abbreviated, time: .omitted)
+    }
+
+    // MARK: - Smart
+
+    /// Smart format: "Mar 5" for dates within 11 months, "Jun 2024" for older dates.
+    var smartFormatted: String {
+        let calendar = Calendar.current
+        let now = Date.now
+        let components = calendar.dateComponents([.year, .month], from: now)
+        let currentYear = components.year!
+        let currentMonth = components.month!
+        var cutoffMonth = currentMonth - 11
+        var cutoffYear = currentYear
+        if cutoffMonth < 1 {
+            cutoffMonth += 12
+            cutoffYear -= 1
+        }
+        let cutoff = calendar.date(from: DateComponents(year: cutoffYear, month: cutoffMonth, day: 1))!
+        return if self >= cutoff {
+            formatted(.dateTime.month(.abbreviated).day())
+        } else {
+            formatted(.dateTime.month(.abbreviated).year())
+        }
+    }
+
+    // MARK: - Hour
+
+    /// Format an hour (0–23) as a locale-appropriate time range label.
+    static func hourLabel(_ hour: Int) -> String {
+        let calendar = Calendar.current
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = 0
+        guard let start = calendar.date(from: components) else {
+            return "\(hour):00"
+        }
+        let style = Date.FormatStyle()
+            .hour(.defaultDigits(amPM: .abbreviated))
+        return start.formatted(style)
+    }
+
+    // MARK: - Weekday
+
+    static func dates(from firstDate: Date, to finalDate: Date, interval: Calendar.Component = .day) -> [Date] {
+        var dates: [Date] = []
+        var current = firstDate
+        while current <= finalDate {
+            dates.append(current)
+            current = Calendar.current.date(byAdding: interval, value: 1, to: current)!
+        }
+        return dates
+    }
+
+    /// Returns the weekday name for a weekday index (1 = Sunday in Calendar).
+    static func weekdayLabel(_ weekday: Int) -> String {
+        guard weekday >= 1 && weekday <= 7 else { return "\(weekday)?" }
+        let symbols = Calendar.current.standaloneWeekdaySymbols
+        let index = (weekday - 1) % symbols.count
+        return symbols[index]
+    }
+
     // MARK: - Duration Strings
 
-    static func durationString(from startDate: Date, to endDate: Date) -> String {
+    static func msDurationString(from startDate: Date, to endDate: Date) -> String {
         let elapsedTime = TimeInterval(endDate.timeIntervalSince(startDate))
         if elapsedTime < 1.0 {
             return String(format: "%dms", Int(ceil(elapsedTime * 1000.0)))
         } else {
-            return String(format: "%1.2f s", elapsedTime)
+            return String(format: "%1.2fs", elapsedTime)
         }
     }
 
-    static func durationLabel(from startDate: Date, to endDate: Date) -> String {
+    static func durationString(from startDate: Date, to endDate: Date) -> String {
         let calendar = Calendar.current
         let nowIsAfter = endDate > startDate
         let fromDate = nowIsAfter ? startDate : endDate

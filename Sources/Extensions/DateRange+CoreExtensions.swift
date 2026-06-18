@@ -15,12 +15,12 @@ public extension Range<Date> {
         "\(lowerBound.formatted(.iso8601)) ..< \(upperBound.formatted(.iso8601))"
     }
 
-    var durationString: String {
-        Date.durationString(from: lowerBound, to: upperBound)
+    var msDurationString: String {
+        Date.msDurationString(from: lowerBound, to: upperBound)
     }
 
-    var durationLabel: String {
-        Date.durationLabel(from: lowerBound, to: upperBound)
+    var durationString: String {
+        Date.durationString(from: lowerBound, to: upperBound)
     }
 }
 
@@ -34,12 +34,12 @@ public extension ClosedRange<Date> {
         "\(lowerBound.formatted(.iso8601)) ... \(upperBound.formatted(.iso8601))"
     }
 
-    var durationString: String {
-        Date.durationString(from: lowerBound, to: upperBound)
+    var msDurationString: String {
+        Date.msDurationString(from: lowerBound, to: upperBound)
     }
 
-    var durationLabel: String {
-        Date.durationLabel(from: lowerBound, to: upperBound.addingTimeInterval(-1.0))
+    var durationString: String {
+        Date.durationString(from: lowerBound, to: upperBound.addingTimeInterval(-1.0))
     }
 }
 

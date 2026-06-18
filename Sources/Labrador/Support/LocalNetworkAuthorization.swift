@@ -20,109 +20,112 @@
 import Foundation
 import Network
 
-private let log = Timber(category: "LocalNetworkAuth", options: [.omitSourceLocation])
-private let serviceType = "_preflight_check._tcp"
+public struct LocalNetworkAuthorization {
 
-/// Checks whether Local Network permission has been granted. If the
-/// authorization state isn't yet determined, this triggers the system
-/// permission dialog and waits for the user's response.
-///
-/// - Returns: `true` if permission was granted, `false` if denied.
-/// - Throws: On network errors or cancellation.
-public func requestLocalNetworkAuthorization() async throws -> Bool {
+    private static let log = Timber(category: "LocalNetworkAuth", options: [.omitSourceLocation])
+    private static let serviceType = "_preflight_check._tcp"
 
-    let queue = DispatchQueue(label: "\(Bundle.appBundleIdentifier ?? "app").localNetworkAuthCheck")
+    /// Checks whether Local Network permission has been granted. If the
+    /// authorization state isn't yet determined, this triggers the system
+    /// permission dialog and waits for the user's response.
+    ///
+    /// - Returns: `true` if permission was granted, `false` if denied.
+    /// - Throws: On network errors or cancellation.
+    public static func request() async throws -> Bool {
 
-    let listener = try NWListener(using: NWParameters(tls: .none, tcp: NWProtocolTCP.Options()))
-    listener.service = NWListener.Service(name: UUID().uuidString, type: serviceType)
-    listener.newConnectionHandler = { _ in }
+        let queue = DispatchQueue(label: Bundle.appBundleIdentifier)
 
-    let parameters = NWParameters()
-    parameters.includePeerToPeer = true
-    let browser = NWBrowser(for: .bonjour(type: serviceType, domain: nil), using: parameters)
+        let listener = try NWListener(using: NWParameters(tls: .none, tcp: NWProtocolTCP.Options()))
+        listener.service = NWListener.Service(name: UUID().uuidString, type: serviceType)
+        listener.newConnectionHandler = { _ in }
 
-    return try await withTaskCancellationHandler {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+        let parameters = NWParameters()
+        parameters.includePeerToPeer = true
+        let browser = NWBrowser(for: .bonjour(type: serviceType, domain: nil), using: parameters)
 
-            final class LocalState: @unchecked Sendable {
-                var didResume = false
-            }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
 
-            let local = LocalState()
-
-            @Sendable func resume(with result: Result<Bool, any Error>) {
-                if local.didResume { return }
-                local.didResume = true
-
-                listener.stateUpdateHandler = { _ in }
-                browser.stateUpdateHandler = { _ in }
-                browser.browseResultsChangedHandler = { _, _ in }
-                listener.cancel()
-                browser.cancel()
-
-                continuation.resume(with: result)
-            }
-
-            if Task.isCancelled {
-                resume(with: .failure(CancellationError()))
-                return
-            }
-
-            listener.stateUpdateHandler = { newState in
-                switch newState {
-                case .setup, .ready, .waiting:
-                    // .waiting is expected while the permission dialog is shown —
-                    // do not resolve here. Only the browser drives the result.
-                    break
-                case .cancelled:
-                    resume(with: .failure(CancellationError()))
-                case let .failed(error):
-                    log.error("Listener failed: \(error)")
-                    resume(with: .failure(error))
-                @unknown default:
-                    break
+                final class LocalState: @unchecked Sendable {
+                    var didResume = false
                 }
-            }
-            listener.start(queue: queue)
 
-            browser.stateUpdateHandler = { newState in
-                switch newState {
-                case .setup, .ready:
-                    break
-                case .cancelled:
+                let local = LocalState()
+
+                @Sendable func resume(with result: Result<Bool, any Error>) {
+                    if local.didResume { return }
+                    local.didResume = true
+
+                    listener.stateUpdateHandler = { _ in }
+                    browser.stateUpdateHandler = { _ in }
+                    browser.browseResultsChangedHandler = { _, _ in }
+                    listener.cancel()
+                    browser.cancel()
+
+                    continuation.resume(with: result)
+                }
+
+                if Task.isCancelled {
                     resume(with: .failure(CancellationError()))
-                case let .failed(error):
-                    log.error("Browser failed: \(error)")
-                    resume(with: .failure(error))
-                case let .waiting(error):
-                    switch error {
-                    case .dns(DNSServiceErrorType(kDNSServiceErr_PolicyDenied)):
-                        log.info("Local network permission denied.")
-                        resume(with: .success(false))
-                    default:
-                        log.error("Browser waiting: \(error)")
+                    return
+                }
+
+                listener.stateUpdateHandler = { newState in
+                    switch newState {
+                    case .setup, .ready, .waiting:
+                        // .waiting is expected while the permission dialog is shown —
+                        // do not resolve here. Only the browser drives the result.
+                        break
+                    case .cancelled:
+                        resume(with: .failure(CancellationError()))
+                    case let .failed(error):
+                        log.error("Listener failed: \(error)")
                         resume(with: .failure(error))
+                    @unknown default:
+                        break
                     }
-                @unknown default:
-                    break
+                }
+                listener.start(queue: queue)
+
+                browser.stateUpdateHandler = { newState in
+                    switch newState {
+                    case .setup, .ready:
+                        break
+                    case .cancelled:
+                        resume(with: .failure(CancellationError()))
+                    case let .failed(error):
+                        log.error("Browser failed: \(error)")
+                        resume(with: .failure(error))
+                    case let .waiting(error):
+                        switch error {
+                        case .dns(DNSServiceErrorType(kDNSServiceErr_PolicyDenied)):
+                            log.info("Local network permission denied.")
+                            resume(with: .success(false))
+                        default:
+                            log.error("Browser waiting: \(error)")
+                            resume(with: .failure(error))
+                        }
+                    @unknown default:
+                        break
+                    }
+                }
+
+                browser.browseResultsChangedHandler = { results, _ in
+                    guard !results.isEmpty else { return }
+                    log.info("Local network permission granted.")
+                    resume(with: .success(true))
+                }
+                browser.start(queue: queue)
+
+                if Task.isCancelled {
+                    resume(with: .failure(CancellationError()))
+                    return
                 }
             }
-
-            browser.browseResultsChangedHandler = { results, _ in
-                guard !results.isEmpty else { return }
-                log.info("Local network permission granted.")
-                resume(with: .success(true))
-            }
-            browser.start(queue: queue)
-
-            if Task.isCancelled {
-                resume(with: .failure(CancellationError()))
-                return
-            }
+        } onCancel: {
+            listener.cancel()
+            browser.cancel()
         }
-    } onCancel: {
-        listener.cancel()
-        browser.cancel()
     }
 }
 
