@@ -18,6 +18,10 @@ public extension Date {
         formatted(.iso8601)
     }
 
+    var safeTimestamp: String {
+        timestamp.replacingOccurrences(of: ":", with: "-")
+    }
+
     var shortDate: String {
         formatted(date: .numeric, time: .omitted)
     }
