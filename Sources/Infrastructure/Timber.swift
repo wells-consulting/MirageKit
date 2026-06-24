@@ -105,10 +105,11 @@ import Foundation
         /// Logs a message at the **debug** level.
         public func debug(
             _ message: String,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, file: file, line: line)
+            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
             logger.debug("\(formatted)")
             Self.sink?(.debug, subsystem, category, message, file, line)
         }
@@ -116,10 +117,11 @@ import Foundation
         /// Logs a message at the **info** level.
         public func info(
             _ message: String,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, file: file, line: line)
+            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
             logger.info("\(formatted)")
             Self.sink?(.info, subsystem, category, message, file, line)
         }
@@ -127,10 +129,11 @@ import Foundation
         /// Logs a message at the **notice** level.
         public func notice(
             _ message: String,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, file: file, line: line)
+            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
             logger.notice("\(formatted)")
             Self.sink?(.notice, subsystem, category, message, file, line)
         }
@@ -138,10 +141,11 @@ import Foundation
         /// Logs a message at the **error** level.
         public func error(
             _ message: String,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, file: file, line: line)
+            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
             logger.error("\(formatted)")
             Self.sink?(.error, subsystem, category, message, file, line)
         }
@@ -149,10 +153,11 @@ import Foundation
         /// Logs a message at the **fault** level.
         public func fault(
             _ message: String,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, file: file, line: line)
+            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
             logger.fault("\(formatted)")
             Self.sink?(.fault, subsystem, category, message, file, line)
         }
@@ -167,11 +172,12 @@ import Foundation
         public func error(
             _ message: String,
             while task: String?,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
             let taskMessage = task.map { "\($0) failed with error: \(message)" } ?? message
-            let formatted = formatMessage(taskMessage, file: file, line: line)
+            let formatted = formatMessage(taskMessage, options: options ?? self.options, file: file, line: line)
             logger.error("\(formatted)")
             Self.sink?(.error, subsystem, category, taskMessage, file, line)
         }
@@ -180,11 +186,12 @@ import Foundation
         public func error(
             _ error: any Error,
             while task: String? = nil,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
             let errorMessage = task.map { "\($0) failed with error: \(error)" } ?? "\(error)"
-            let formatted = formatMessage(errorMessage, file: file, line: line)
+            let formatted = formatMessage(errorMessage, options: options ?? self.options, file: file, line: line)
             logger.error("\(formatted)")
             Self.sink?(.error, subsystem, category, errorMessage, file, line)
         }
@@ -197,11 +204,12 @@ import Foundation
         public func fault(
             _ message: String,
             while task: String?,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
             let taskMessage = task.map { "\($0) failed with error: \(message)" } ?? message
-            let formatted = formatMessage(taskMessage, file: file, line: line)
+            let formatted = formatMessage(taskMessage, options: options ?? self.options, file: file, line: line)
             logger.fault("\(formatted)")
             Self.sink?(.fault, subsystem, category, taskMessage, file, line)
         }
@@ -210,11 +218,12 @@ import Foundation
         public func fault(
             _ error: any Error,
             while task: String? = nil,
+            options: Options? = nil,
             file: String = #fileID,
             line: UInt = #line,
         ) {
             let errorMessage = task.map { "\($0) failed with error: \(error)" } ?? "\(error)"
-            let formatted = formatMessage(errorMessage, file: file, line: line)
+            let formatted = formatMessage(errorMessage, options: options ?? self.options, file: file, line: line)
             logger.fault("\(formatted)")
             Self.sink?(.fault, subsystem, category, errorMessage, file, line)
         }
@@ -451,7 +460,7 @@ extension Timber {
 
     extension Timber {
 
-        func formatMessage(_ message: String, file: String, line: UInt) -> String {
+        func formatMessage(_ message: String, options: Options, file: String, line: UInt) -> String {
             if options.contains(.omitSourceLocation) {
                 message
             } else if options.contains(.decorateSourceLocation) {
