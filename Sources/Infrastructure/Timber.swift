@@ -29,7 +29,15 @@ import Foundation
         /// Optional callback invoked for every log message.
         /// Set at app startup to forward log entries externally.
         public nonisolated(unsafe) static var sink: (
-            @Sendable (_ level: Level, _ subsystem: String, _ category: String, _ message: String, _ file: String, _ line: UInt) -> Void
+            @Sendable (
+                _ level: Level,
+                _ subsystem: String,
+                _ category: String,
+                _ message: String,
+                _ file: String,
+                _ function: String,
+                _ line: UInt
+            ) -> Void
         )?
 
         // MARK: - Level
@@ -61,8 +69,9 @@ import Foundation
         public struct Options: OptionSet, Sendable {
             public let rawValue: Int
             public static let none: Options = []
-            public static let omitSourceLocation = Options(rawValue: 1 << 1)
-            public static let decorateSourceLocation = Options(rawValue: 1 << 2)
+            public static let omitSourceLocation = Options(rawValue: 1 << 0)
+            public static let decorateSourceLocation = Options(rawValue: 1 << 1)
+            public static let omitFunction = Options(rawValue: 1 << 2)
             public init(rawValue: Int) {
                 self.rawValue = rawValue
             }
@@ -107,11 +116,18 @@ import Foundation
             _ message: String,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                message,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.debug("\(formatted)")
-            Self.sink?(.debug, subsystem, category, message, file, line)
+            Self.sink?(.debug, subsystem, category, message, file, function, line)
         }
 
         /// Logs a message at the **info** level.
@@ -119,11 +135,18 @@ import Foundation
             _ message: String,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                message,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.info("\(formatted)")
-            Self.sink?(.info, subsystem, category, message, file, line)
+            Self.sink?(.info, subsystem, category, message, file, function, line)
         }
 
         /// Logs a message at the **notice** level.
@@ -131,11 +154,18 @@ import Foundation
             _ message: String,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                message,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.notice("\(formatted)")
-            Self.sink?(.notice, subsystem, category, message, file, line)
+            Self.sink?(.notice, subsystem, category, message, file, function, line)
         }
 
         /// Logs a message at the **error** level.
@@ -143,11 +173,18 @@ import Foundation
             _ message: String,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                message,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.error("\(formatted)")
-            Self.sink?(.error, subsystem, category, message, file, line)
+            Self.sink?(.error, subsystem, category, message, file, function, line)
         }
 
         /// Logs a message at the **fault** level.
@@ -155,11 +192,18 @@ import Foundation
             _ message: String,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
-            let formatted = formatMessage(message, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                message,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.fault("\(formatted)")
-            Self.sink?(.fault, subsystem, category, message, file, line)
+            Self.sink?(.fault, subsystem, category, message, file, function, line)
         }
 
         // MARK: - Convenience
@@ -174,12 +218,19 @@ import Foundation
             while task: String?,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let taskMessage = task.map { "\($0) failed with error: \(message)" } ?? message
-            let formatted = formatMessage(taskMessage, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                taskMessage,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.error("\(formatted)")
-            Self.sink?(.error, subsystem, category, taskMessage, file, line)
+            Self.sink?(.error, subsystem, category, taskMessage, file, function, line)
         }
 
         /// Logs an `Error` value at the **error** level, optionally prefixed with a task name.
@@ -188,12 +239,19 @@ import Foundation
             while task: String? = nil,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let errorMessage = task.map { "\($0) failed with error: \(error)" } ?? "\(error)"
-            let formatted = formatMessage(errorMessage, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                errorMessage,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.error("\(formatted)")
-            Self.sink?(.error, subsystem, category, errorMessage, file, line)
+            Self.sink?(.error, subsystem, category, errorMessage, file, function, line)
         }
 
         /// Logs a task-failure message at the **fault** level.
@@ -206,12 +264,19 @@ import Foundation
             while task: String?,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let taskMessage = task.map { "\($0) failed with error: \(message)" } ?? message
-            let formatted = formatMessage(taskMessage, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                taskMessage,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.fault("\(formatted)")
-            Self.sink?(.fault, subsystem, category, taskMessage, file, line)
+            Self.sink?(.fault, subsystem, category, taskMessage, file, function, line)
         }
 
         /// Logs an `Error` value at the **fault** level, optionally prefixed with a task name.
@@ -220,12 +285,19 @@ import Foundation
             while task: String? = nil,
             options: Options? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let errorMessage = task.map { "\($0) failed with error: \(error)" } ?? "\(error)"
-            let formatted = formatMessage(errorMessage, options: options ?? self.options, file: file, line: line)
+            let formatted = formatMessage(
+                errorMessage,
+                options: options ?? self.options,
+                file: file,
+                function: function,
+                line: line
+            )
             logger.fault("\(formatted)")
-            Self.sink?(.fault, subsystem, category, errorMessage, file, line)
+            Self.sink?(.fault, subsystem, category, errorMessage, file, function, line)
         }
     }
 
@@ -297,7 +369,7 @@ import Foundation
 
         // MARK: - Internal helpers
 
-        private func emit(_ level: String, _ message: String, file: String, line: UInt) {
+        private func emit(_ level: String, _ message: String, file: String, function: String, line: UInt) {
             print("\(subsystem).\(category) | \(level) \(message) \(Self.shortFile(file)):\(line)")
         }
 
@@ -307,6 +379,7 @@ import Foundation
         public func debug(
             _ message: String,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             emit("DEBUG", message, file: file, line: line)
@@ -317,6 +390,7 @@ import Foundation
         public func info(
             _ message: String,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             emit("INFO", message, file: file, line: line)
@@ -327,6 +401,7 @@ import Foundation
         public func notice(
             _ message: String,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             emit("NOTICE", message, file: file, line: line)
@@ -337,6 +412,7 @@ import Foundation
         public func error(
             _ message: String,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             emit("ERROR", message, file: file, line: line)
@@ -347,6 +423,7 @@ import Foundation
         public func fault(
             _ message: String,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             emit("FAULT", message, file: file, line: line)
@@ -364,6 +441,7 @@ import Foundation
             _ message: String,
             while task: String?,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -380,6 +458,7 @@ import Foundation
             _ error: any Error,
             while task: String? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -400,6 +479,7 @@ import Foundation
             _ message: String,
             while task: String?,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -416,6 +496,7 @@ import Foundation
             _ error: any Error,
             while task: String? = nil,
             file: String = #fileID,
+            function: String = #function,
             line: UInt = #line,
         ) {
             let formatted = if let task {
@@ -460,14 +541,23 @@ extension Timber {
 
     extension Timber {
 
-        func formatMessage(_ message: String, options: Options, file: String, line: UInt) -> String {
-            if options.contains(.omitSourceLocation) {
-                message
-            } else if options.contains(.decorateSourceLocation) {
-                "\(message) [\(Self.shortFile(file)):\(line)]"
+        func formatMessage(
+            _ message: String,
+            options: Options,
+            file: String,
+            function: String,
+            line: UInt
+        ) -> String {
+            if options.contains(.omitSourceLocation) { return message }
+            let location: String = if options.contains(.omitFunction) || function.isEmpty {
+                "\(Self.shortFile(file)):\(line)"
             } else {
-                "\(message) \(Self.shortFile(file)):\(line)"
+                "\(Self.shortFile(file)):\(function):\(line)"
             }
+            if options.contains(.decorateSourceLocation) {
+                return "\(message) [\(location)]"
+            }
+            return "\(message) \(location)"
         }
     }
 
@@ -494,6 +584,7 @@ public extension Timber {
         public let category: String
         public let message: String
         public let file: String
+        public let function: String
         public let line: UInt
 
         public init(
@@ -504,6 +595,7 @@ public extension Timber {
             category: String = "",
             message: String,
             file: String,
+            function: String,
             line: UInt,
         ) {
             self.id = id
@@ -513,11 +605,12 @@ public extension Timber {
             self.category = category
             self.message = message
             self.file = file
+            self.function = function
             self.line = line
         }
 
         private enum CodingKeys: String, CodingKey {
-            case id, timestamp, level, subsystem, category, message, file, line
+            case id, timestamp, level, subsystem, category, message, file, function, line
         }
 
         public init(from decoder: any Decoder) throws {
@@ -529,6 +622,7 @@ public extension Timber {
             category = try container.decodeIfPresent(String.self, forKey: .category) ?? ""
             message = try container.decode(String.self, forKey: .message)
             file = try container.decode(String.self, forKey: .file)
+            function = try container.decode(String.self, forKey: .function)
             line = try container.decode(UInt.self, forKey: .line)
         }
 
@@ -541,6 +635,7 @@ public extension Timber {
             try container.encode(category, forKey: .category)
             try container.encode(message, forKey: .message)
             try container.encode(file, forKey: .file)
+            try container.encode(function, forKey: .function)
             try container.encode(line, forKey: .line)
         }
     }
@@ -660,9 +755,18 @@ public extension Timber {
             category: String = "",
             message: String,
             file: String,
+            function: String,
             line: UInt,
         ) {
-            appendEntry(level: level, subsystem: subsystem, category: category, message: message, file: file, line: line)
+            appendEntry(
+                level: level,
+                subsystem: subsystem,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
         }
 
         /// Add a new entry only if the store's generation still matches.
@@ -677,10 +781,19 @@ public extension Timber {
             category: String = "",
             message: String,
             file: String,
+            function: String,
             line: UInt,
         ) {
             guard generation == self.generation.withLock({ $0 }) else { return }
-            appendEntry(level: level, subsystem: subsystem, category: category, message: message, file: file, line: line)
+            appendEntry(
+                level: level,
+                subsystem: subsystem,
+                category: category,
+                message: message,
+                file: file,
+                function: function,
+                line: line
+            )
         }
 
         /// Delete all persisted entries and remove the backing file.
@@ -698,6 +811,7 @@ public extension Timber {
             category: String,
             message: String,
             file: String,
+            function: String,
             line: UInt,
         ) {
             let entry = TimberLogEntry(
@@ -707,7 +821,8 @@ public extension Timber {
                 subsystem: subsystem,
                 category: category,
                 message: message,
-                file: "\(file)",
+                file: file,
+                function: function,
                 line: line,
             )
 
@@ -776,7 +891,7 @@ public extension Timber {
             _ store: TimberLogStore = .shared,
             minimumLevel: Level = .error,
         ) {
-            Timber.sink = { level, subsystem, category, message, file, line in
+            Timber.sink = { level, subsystem, category, message, file, function, line in
                 guard level >= minimumLevel else { return }
                 let gen = store.currentGeneration
                 Task {
@@ -787,6 +902,7 @@ public extension Timber {
                         category: category,
                         message: message,
                         file: file,
+                        function: function,
                         line: line,
                     )
                 }
