@@ -669,25 +669,23 @@ public extension Timber {
 
         // MARK: - Initializers
 
-        /// Creates a store that writes to the app's document directory.
+        /// Creates a store that writes to the given directory.
         ///
-        /// Safe to force-unwrap: on Apple platforms (the only target for this code path,
-        /// gated by `#if canImport(os)`) the documents directory is always present.
-        /// If the sandbox were broken enough for this to fail, the app could not run at all.
-        public init() {
+        /// - Parameter directory: The directory in which the log file is written.
+        ///   Pass `nil` (or omit the argument) to use the app's Documents directory.
+        ///
+        /// Safe to force-unwrap when `directory` is `nil`: on Apple platforms (the only
+        /// target for this code path, gated by `#if canImport(os)`) the documents directory
+        /// is always present. If the sandbox were broken enough for this to fail, the app
+        /// could not run at all.
+        public init(directory: URL? = nil) {
             // swiftlint:disable:next force_unwrapping
-            let docs = FileManager.default.urls(
+            let resolvedDirectory = directory ?? FileManager.default.urls(
                 for: .documentDirectory,
                 in: .userDomainMask,
             ).first!
-            self.init(directory: docs)
-        }
 
-        /// Creates a store that writes to the given directory.
-        /// Useful for testing with a temporary directory.
-        public init(directory: URL) {
-
-            let fileURL = directory.appendingPathComponent(Self.fileName)
+            let fileURL = resolvedDirectory.appendingPathComponent(Self.fileName)
             self.fileURL = fileURL
 
             // Compact single-line JSON for JSONL format (no pretty printing).
@@ -907,6 +905,20 @@ public extension Timber {
                     )
                 }
             }
+        }
+
+        /// Wires a new ``TimberLogStore`` into Timber's sink, writing to the given directory.
+        ///
+        /// - Parameters:
+        ///   - directory: The directory in which log entries are persisted.
+        ///     Pass `nil` to use the shared store (app's Documents directory).
+        ///   - minimumLevel: Only entries at or above this level are persisted. Defaults to `.error`.
+        static func enableLogStore(
+            directory: URL?,
+            minimumLevel: Level = .error,
+        ) {
+            let store = directory.map { TimberLogStore(directory: $0) } ?? .shared
+            enableLogStore(store, minimumLevel: minimumLevel)
         }
     }
 
