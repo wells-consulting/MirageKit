@@ -616,7 +616,7 @@ extension Labrador {
                 parts.append(data.count.formatted(.byteCount(style: .memory)))
             }
 
-            parts.append(Date.durationString(from: requestTimestamp, to: timestamp))
+            parts.append(Date.msDurationString(from: requestTimestamp, to: timestamp))
 
             var responseDescription: String?
 
