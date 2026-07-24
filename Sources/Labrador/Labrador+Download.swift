@@ -43,39 +43,16 @@ public extension Labrador {
         return AsyncStream { continuation in
             let task = Task {
                 do {
-                    let (asyncBytes, urlResponse) = try await urlSession.bytes(for: urlRequest)
+                    let (data, urlResponse) = try await urlSession.data(for: urlRequest)
 
                     let totalBytes: Int64? = {
                         let expected = urlResponse.expectedContentLength
                         return expected != -1 ? expected : nil
                     }()
 
-                    var data = Data()
-                    if let totalBytes {
-                        data.reserveCapacity(Int(totalBytes))
-                    }
+                    let bytesReceived = Int64(data.count)
 
-                    var bytesReceived: Int64 = 0
-                    let chunkSize: Int64 = 65536
-
-                    for try await byte in asyncBytes {
-
-                        try Task.checkCancellation()
-                        data.append(byte)
-                        bytesReceived += 1
-
-                        if bytesReceived % chunkSize == 0 {
-                            continuation.yield(
-                                .progress(bytesReceived: bytesReceived, totalBytes: totalBytes),
-                            )
-                        }
-                    }
-
-                    // Emit final progress to ensure the caller sees 100%
-                    continuation.yield(
-                        .progress(bytesReceived: bytesReceived, totalBytes: totalBytes),
-                    )
-
+                    continuation.yield(.progress(bytesReceived: bytesReceived, totalBytes: totalBytes))
                     continuation.yield(.completed(data))
 
                 } catch is CancellationError {
