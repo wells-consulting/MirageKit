@@ -158,6 +158,15 @@ public extension String {
         }
     }
 
+    /// Strips parameter labels from a Swift `#function` string.
+    /// `"makeNetworkRequest(request:)"` → `"makeNetworkRequest"`.
+    var functionBaseName: String {
+        if let paren = firstIndex(of: "(") {
+            return String(self[..<paren])
+        }
+        return self
+    }
+
     /// Returns a redacted string that is safe to log.
     func partiallyRedacted() -> String {
         guard count > 12 else { return "<redacted>" }

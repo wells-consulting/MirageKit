@@ -50,7 +50,7 @@ struct DateDurationStringTests {
     func subSecondDuration() {
         let start = Date()
         let end = start.addingTimeInterval(0.5)
-        let result = Date.durationString(from: start, to: end)
+        let result = Date.msDurationString(from: start, to: end)
         #expect(result.contains("ms"))
     }
 
@@ -66,7 +66,7 @@ struct DateDurationStringTests {
     func durationLabelDays() {
         let start = Date()
         let end = start.addingTimeInterval(86400 * 3)
-        let result = Date.durationLabel(from: start, to: end)
+        let result = Date.durationString(from: start, to: end)
         #expect(result.contains("3 days"))
     }
 
@@ -74,7 +74,7 @@ struct DateDurationStringTests {
     func durationLabelJustNow() {
         let start = Date()
         let end = start.addingTimeInterval(5)
-        let result = Date.durationLabel(from: start, to: end)
+        let result = Date.durationString(from: start, to: end)
         #expect(result == "just now")
     }
 
@@ -82,7 +82,7 @@ struct DateDurationStringTests {
     func durationLabelHours() {
         let start = Date()
         let end = start.addingTimeInterval(7200)
-        let result = Date.durationLabel(from: start, to: end)
+        let result = Date.durationString(from: start, to: end)
         #expect(result.contains("2 hours"))
     }
 
@@ -90,7 +90,7 @@ struct DateDurationStringTests {
     func durationLabelSingular() {
         let start = Date()
         let end = start.addingTimeInterval(86400)
-        let result = Date.durationLabel(from: start, to: end)
+        let result = Date.durationString(from: start, to: end)
         #expect(result.contains("1 day"))
         #expect(!result.contains("days"))
     }
@@ -213,7 +213,7 @@ struct DateRangeExtensionTests {
         let start = Date()
         let end = start.addingTimeInterval(0.5)
         let range = start..<end
-        #expect(range.durationString.contains("ms"))
+        #expect(range.msDurationString.contains("ms"))
     }
 
     @Test("ClosedRange durationString shows duration")

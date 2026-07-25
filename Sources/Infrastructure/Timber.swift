@@ -72,6 +72,9 @@ import Foundation
             public static let omitSourceLocation = Options(rawValue: 1 << 0)
             public static let decorateSourceLocation = Options(rawValue: 1 << 1)
             public static let omitFunction = Options(rawValue: 1 << 2)
+            public static let omitFile = Options(rawValue: 1 << 3)
+            public static let omitParameterLabels = Options(rawValue: 1 << 4)
+            public static let omitLine = Options(rawValue: 1 << 5)
             public init(rawValue: Int) {
                 self.rawValue = rawValue
             }
@@ -548,12 +551,25 @@ extension Timber {
             function: String,
             line: UInt
         ) -> String {
-            if options.contains(.omitSourceLocation) { return message }
-            let location: String = if options.contains(.omitFunction) || function.isEmpty {
-                "\(Self.shortFile(file)):\(line)"
-            } else {
-                "\(Self.shortFile(file)):\(function):\(line)"
+            guard !options.contains(.omitSourceLocation) else { return message }
+            var location = String()
+            location.reserveCapacity(64)
+            if !options.contains(.omitFile) {
+                location.append(Self.shortFile(file))
             }
+            if !options.contains(.omitFunction), !function.isEmpty {
+                if !location.isEmpty { location.append(":") }
+                if options.contains(.omitParameterLabels) {
+                    location.append(function.functionBaseName)
+                } else {
+                    location.append(function)
+                }
+            }
+            if !options.contains(.omitLine) {
+                if !location.isEmpty { location.append(":") }
+                location.append("\(line)")
+            }
+            guard !location.isEmpty else { return message }
             if options.contains(.decorateSourceLocation) {
                 return "\(message) [\(location)]"
             }
@@ -704,8 +720,10 @@ public extension Timber {
             {
                 let cutoff = Date().addingTimeInterval(-Self.maxAge)
                 var entries = [TimberLogEntry]()
+                var originalLineCount = 0
 
                 for lineData in data.split(separator: UInt8(ascii: "\n")) {
+                    originalLineCount += 1
                     if let entry = try? jayson
                         .decode(TimberLogEntry.self, from: Data(lineData))
                     {
@@ -722,7 +740,7 @@ public extension Timber {
                 self.buffer = entries
 
                 // Rewrite if we pruned expired or excess entries
-                if entries.count != data.split(separator: UInt8(ascii: "\n")).count {
+                if entries.count != originalLineCount {
                     Self.writeEntries(entries, to: fileURL, using: jayson)
                 }
             }
