@@ -97,6 +97,7 @@ extension Labrador {
         resumeData: Data? = nil,
         trustSelfSignedCertificates: Bool = false,
         httpMaximumConnectionsPerHost: Int? = nil,
+        progressThrottleInterval: TimeInterval? = nil,
         logContext: String? = nil,
     ) -> AsyncStream<FileDownloadEvent> {
 
@@ -107,7 +108,10 @@ extension Labrador {
 
         log(clientRequest)
 
-        let coordinator = FileDownloadCoordinator(trustSelfSignedCertificates: trustSelfSignedCertificates)
+        let coordinator = FileDownloadCoordinator(
+            trustSelfSignedCertificates: trustSelfSignedCertificates,
+            progressThrottleInterval: progressThrottleInterval ?? 1.0
+        )
 
         let config = URLSessionConfiguration.default
         if let httpMaximumConnectionsPerHost {
@@ -166,7 +170,7 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
     private var lastReportedBytes: [Int: Int64] = [:]
     private var lastReportedProgress: [Int: ContinuousClock.Instant] = [:]
 
-    init(trustSelfSignedCertificates: Bool, progressThrottleInterval: TimeInterval = 1.0) {
+    init(trustSelfSignedCertificates: Bool, progressThrottleInterval: TimeInterval) {
         self.trustSelfSignedCertificates = trustSelfSignedCertificates
         self.progressThrottleInterval = progressThrottleInterval
     }
