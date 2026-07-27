@@ -73,7 +73,12 @@ extension Labrador {
     // MARK: - File Download
 
     public enum FileDownloadEvent: Sendable {
-        case progress(bytesWritten: Int64, totalBytes: Int64?, speed: Double?)
+        case progress(
+            bytesWritten: Int64,
+            totalBytes: Int64?,
+            elapsedSeconds: TimeInterval?,
+            mbps: String?
+        )
         case completed(tempFileURL: URL)
         case cancelled(resumeData: Data?)
         case failed(any Error)
@@ -254,8 +259,19 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
             speed = nil
         }
 
+        let mbps = speed
+            .map { $0 / (1024 * 1024) }
+            .map { String(format: "%.2f MB/s", $0) } ?? "??"
+
         let totalBytes: Int64? = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : nil
-        continuation.yield(.progress(bytesWritten: totalBytesWritten, totalBytes: totalBytes, speed: speed))
+        continuation.yield(
+            .progress(
+                bytesWritten: totalBytesWritten,
+                totalBytes: totalBytes,
+                elapsedSeconds: elapsedSeconds,
+                mbps: mbps
+            )
+        )
     }
 
     func urlSession(
@@ -276,7 +292,8 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
             .progress(
                 bytesWritten: totalWritten,
                 totalBytes: totalExpected > 0 ? totalExpected : nil,
-                speed: nil,
+                elapsedSeconds: nil,
+                mbps: nil,
             )
         )
 
