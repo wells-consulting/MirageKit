@@ -11,15 +11,15 @@ import Foundation
 
 // MARK: - Download
 
-public extension Labrador {
+extension Labrador {
 
-    enum DownloadEvent: Sendable {
+    public enum DownloadEvent: Sendable {
         case progress(bytesReceived: Int64, totalBytes: Int64?)
         case completed(Data)
         case failed(any Error)
     }
 
-    func download(
+    public func download(
         _ url: URL,
         headers: [String: String]? = nil,
         timeout: TimeInterval? = nil,
@@ -72,8 +72,8 @@ public extension Labrador {
 
     // MARK: - File Download
 
-    enum FileDownloadEvent: Sendable {
-        case progress(bytesWritten: Int64, totalBytes: Int64?)
+    public enum FileDownloadEvent: Sendable {
+        case progress(bytesWritten: Int64, totalBytes: Int64?, speed: Double?)
         case completed(tempFileURL: URL)
         case cancelled(resumeData: Data?)
         case failed(any Error)
@@ -92,7 +92,7 @@ public extension Labrador {
     /// `.cancelled(resumeData:)` event carries opaque resume data (may be `nil`
     /// for very short downloads) that can be passed back via `resumeData:` on the
     /// next call.
-    func downloadToFile(
+    public func downloadToFile(
         _ request: URLRequest,
         resumeData: Data? = nil,
         trustSelfSignedCertificates: Bool = false,
@@ -157,15 +157,18 @@ public extension Labrador {
 
 private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
 
-    private static let progressInterval: Int64 = 65_536
+    private let progressThrottleInterval: TimeInterval
 
     private let trustSelfSignedCertificates: Bool
+    private let clock = ContinuousClock()
     private let lock = NSLock()
     private var continuations: [Int: AsyncStream<Labrador.FileDownloadEvent>.Continuation] = [:]
     private var lastReportedBytes: [Int: Int64] = [:]
+    private var lastReportedProgress: [Int: ContinuousClock.Instant] = [:]
 
-    init(trustSelfSignedCertificates: Bool) {
+    init(trustSelfSignedCertificates: Bool, progressThrottleInterval: TimeInterval = 1.0) {
         self.trustSelfSignedCertificates = trustSelfSignedCertificates
+        self.progressThrottleInterval = progressThrottleInterval
     }
 
     func register(
@@ -176,6 +179,7 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
         defer { lock.unlock() }
         continuations[taskID] = continuation
         lastReportedBytes[taskID] = 0
+        lastReportedProgress[taskID] = clock.now
     }
 
     @discardableResult
@@ -183,7 +187,13 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
         lock.lock()
         defer { lock.unlock() }
         lastReportedBytes.removeValue(forKey: taskID)
+        lastReportedProgress.removeValue(forKey: taskID)
         return continuations.removeValue(forKey: taskID)
+    }
+
+    private static func seconds(from duration: Duration) -> Double {
+        let components = duration.components
+        return Double(components.seconds) + Double(components.attoseconds) / 1_000_000_000_000_000_000
     }
 
     // MARK: URLSessionDelegate
@@ -194,8 +204,8 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void,
     ) {
         if trustSelfSignedCertificates,
-           challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-           let trust = challenge.protectionSpace.serverTrust
+            challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+            let trust = challenge.protectionSpace.serverTrust
         {
             completionHandler(.useCredential, URLCredential(trust: trust))
         } else {
@@ -213,18 +223,39 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
         totalBytesExpectedToWrite: Int64,
     ) {
         lock.lock()
-        let continuation = continuations[downloadTask.taskIdentifier]
-        let last = lastReportedBytes[downloadTask.taskIdentifier] ?? 0
-        let shouldReport = totalBytesWritten - last >= Self.progressInterval
-        if shouldReport {
-            lastReportedBytes[downloadTask.taskIdentifier] = totalBytesWritten
+        let now = clock.now
+        let shouldReport: Bool
+        let elapsedSeconds: Double?
+        let taskID = downloadTask.taskIdentifier
+        let lastBytes = lastReportedBytes[taskID]
+        let lastProgress = lastReportedProgress[taskID]
+        if let lastProgress {
+            let elapsed = Self.seconds(from: lastProgress.duration(to: now))
+            elapsedSeconds = elapsed
+            shouldReport = elapsed >= progressThrottleInterval
+            if shouldReport {
+                lastReportedProgress[taskID] = now
+                lastReportedBytes[taskID] = totalBytesWritten
+            }
+        } else {
+            elapsedSeconds = nil
+            shouldReport = false
         }
+        let continuation = continuations[taskID]
         lock.unlock()
 
         guard shouldReport, let continuation else { return }
 
+        let speed: Double?
+        if let elapsedSeconds, elapsedSeconds > 0 {
+            let delta = totalBytesWritten - (lastBytes ?? 0)
+            speed = Double(delta) / elapsedSeconds
+        } else {
+            speed = nil
+        }
+
         let totalBytes: Int64? = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : nil
-        continuation.yield(.progress(bytesWritten: totalBytesWritten, totalBytes: totalBytes))
+        continuation.yield(.progress(bytesWritten: totalBytesWritten, totalBytes: totalBytes, speed: speed))
     }
 
     func urlSession(
@@ -241,10 +272,13 @@ private final class FileDownloadCoordinator: NSObject, URLSessionDownloadDelegat
         // Emit a final progress snapshot.
         let totalWritten = downloadTask.countOfBytesReceived
         let totalExpected = downloadTask.countOfBytesExpectedToReceive
-        continuation.yield(.progress(
-            bytesWritten: totalWritten,
-            totalBytes: totalExpected > 0 ? totalExpected : nil,
-        ))
+        continuation.yield(
+            .progress(
+                bytesWritten: totalWritten,
+                totalBytes: totalExpected > 0 ? totalExpected : nil,
+                speed: nil,
+            )
+        )
 
         // URLSession reclaims `location` once this callback returns, so we move
         // the file to a stable temp URL here — synchronously, before returning —
