@@ -25,16 +25,17 @@ public actor Labrador {
 
     let urlSession: URLSession
     var additionalHeaders: [String: String] = [:]
-    private let logOptions: LogOptions
+    let logOptions: LogOptions
     let jayson: Jayson
-    private let timber: Timber
-    private let interceptors: [Interceptor]
-    private let retryPolicy: RetryPolicy?
-    private let baseURL: URL?
+    let timber: Timber
+    let interceptors: [Interceptor]
+    let retryPolicy: RetryPolicy?
+    let tlsTrustPolicy: TLSTrustPolicy
+    let baseURL: URL?
 
     /// Retained so the URLSession delegate stays alive for the
     /// lifetime of this Labrador instance.
-    private let sessionDelegate: (any URLSessionDelegate)?
+    let sessionDelegate: LabradorSessionDelegate?
 
     // MARK: - Initializer
 
@@ -61,7 +62,9 @@ public actor Labrador {
             if let maxConnectionsPerHost = configuration.maxConnectionsPerHost {
                 sessionConfig.httpMaximumConnectionsPerHost = maxConnectionsPerHost
             }
-            let delegate = Self.makeDelegate(for: configuration.tlsTrustPolicy)
+            let delegate = LabradorSessionDelegate(
+                trustSelfSignedCertificates: configuration.tlsTrustPolicy == .trustSelfSigned
+            )
             self.sessionDelegate = delegate
             self.urlSession = URLSession(
                 configuration: sessionConfig,
@@ -74,6 +77,7 @@ public actor Labrador {
         self.jayson = configuration.jayson
         self.interceptors = configuration.interceptors
         self.retryPolicy = configuration.retryPolicy
+        self.tlsTrustPolicy = configuration.tlsTrustPolicy
         self.baseURL = configuration.baseURL
 
         for (name, value) in configuration.headers {
@@ -882,18 +886,4 @@ extension Labrador {
         return logOptions
     }
 
-    #if canImport(Security)
-    private static func makeDelegate(for policy: TLSTrustPolicy) -> (any URLSessionDelegate)? {
-        switch policy {
-        case .system:
-            nil
-        case .trustSelfSigned:
-            SelfSignedCertificateDelegate()
-        }
-    }
-    #else
-    private static func makeDelegate(for policy: TLSTrustPolicy) -> (any URLSessionDelegate)? {
-        nil
-    }
-    #endif
 }
